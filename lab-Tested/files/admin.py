@@ -85,12 +85,17 @@ def ist(value):
 
 @app.before_request
 def track_activity():
+    if session.get("is_admin"):
+        return
+
     uid = session.get("user_id")
     if not uid:
         return
+
     if not session.get("_login_logged"):
         db_run("INSERT INTO logins (user_id, at) VALUES (?, ?)", (uid, _now()))
         session["_login_logged"] = True
+
     if request.method == "GET":
         first = request.path.strip("/").split("/")[0]
         if first in LABS:
@@ -117,28 +122,43 @@ def admin_required(view):
 def admin_login():
     if session.get("is_admin"):
         return redirect(url_for("admin_dashboard"))
+
     if request.method == "POST":
         _check_csrf()
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         user, pw = _admin_creds()
+
         if secrets.compare_digest(username.encode(), user.encode()) and secrets.compare_digest(
             password.encode(), pw.encode()
         ):
+            session.clear()
+            session.permanent = True
             session["is_admin"] = True
+
+            # Reserved identity for admin lab access.
+            # Normal registered users receive positive database IDs.
+            session["user_id"] = -1
+            session["user"] = "admin"
+            session["session_id"] = secrets.token_urlsafe(32)
+            session["_csrf"] = secrets.token_hex(16)
+            session["login_time"] = datetime.now(timezone.utc).isoformat()
+
             return redirect(url_for("admin_dashboard"))
+
         print(
             f"[Admin] Login failed: typed user='{username}' (expected '{user}'), "
             f"typed password length={len(password)} (expected {len(pw)})",
             flush=True,
         )
         flash("Invalid admin credentials.", "error")
+
     return render_template("admin_login.html")
 
 
 @app.route("/admin/logout")
 def admin_logout():
-    session.pop("is_admin", None)
+    session.clear()
     return redirect(url_for("admin_login"))
 
 
@@ -168,6 +188,7 @@ ORDER BY at DESC LIMIT 50
 def admin_dashboard():
     day_ago = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     conn = get_db()
+
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(USERS_SQL)
@@ -205,6 +226,7 @@ def admin_dashboard():
                 (day_ago,),
             )
             stats = cur.fetchone()
+
     finally:
         conn.close()
 
@@ -219,22 +241,70 @@ def admin_dashboard():
     )
 
 
+@app.route("/admin/user/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_user(user_id):
+    _check_csrf()
+
+    conn = get_db()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, username FROM users WHERE id = %s",
+                (user_id,),
+            )
+            user = cur.fetchone()
+
+            if not user:
+                flash("User not found.", "error")
+                return redirect(url_for("admin_dashboard"))
+
+            # Delete associated records before deleting the user.
+            for table in ("payments", "lab_visits", "logins", "password_resets"):
+                cur.execute(
+                    f"DELETE FROM {table} WHERE user_id = %s",
+                    (user_id,),
+                )
+
+            cur.execute(
+                "DELETE FROM users WHERE id = %s",
+                (user_id,),
+            )
+
+        conn.commit()
+        flash(f"User {user[1]} deleted successfully.", "success")
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    return redirect(url_for("admin_dashboard"))
+
+
 @app.route("/admin/payment/<int:pid>", methods=["POST"])
 @admin_required
 def admin_payment(pid):
     _check_csrf()
     action = request.form.get("action")
+
     if action in ("verified", "rejected"):
         db_run("UPDATE payments SET status = ? WHERE id = ?", (action, pid))
+
     return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/contribute/submit", methods=["POST"])
 def contribute_submit():
-    if not session.get("user_id"):
+    if not session.get("user_id") or session.get("is_admin"):
         return redirect(url_for("login", next="/contribute"))
+
     _check_csrf()
     utr = re.sub(r"\s", "", request.form.get("utr", ""))
+
     try:
         amount = Decimal(request.form.get("amount", ""))
     except InvalidOperation:
@@ -242,8 +312,10 @@ def contribute_submit():
 
     if not re.fullmatch(r"\d{12}", utr):
         flash("Enter the 12-digit UPI reference (UTR) number.", "error")
+
     elif amount < 1 or amount > 100000:
         flash("Enter a valid amount between 1 and 100000.", "error")
+
     else:
         try:
             db_run(
@@ -251,6 +323,7 @@ def contribute_submit():
                 (session["user_id"], float(amount), utr, _now()),
             )
             flash("Thank you! Your payment is submitted and awaiting verification.", "success")
+
         except psycopg2.IntegrityError:
             flash("This reference number was already submitted.", "error")
 

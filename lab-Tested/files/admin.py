@@ -1,20 +1,16 @@
-
 import os
 import re
 import secrets
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from functools import wraps
-
-import psycopg2
-from psycopg2.extras import RealDictCursor
 
 from dotenv import dotenv_values
 from flask import flash, redirect, render_template, request, session, url_for
 
 from files.ansible import app
 from files.auth import _check_csrf, db_run, get_db
-from files.config import execute_script, convert_placeholders
 
 ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 LABS = {"ansible", "jenkins", "bash"}
@@ -42,25 +38,24 @@ def _now():
 def init_tracking():
     conn = get_db()
     try:
-        execute_script(
-            conn,
+        conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS logins (
-                id BIGSERIAL PRIMARY KEY,
-                user_id BIGINT NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
                 at TEXT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS lab_visits (
-                id BIGSERIAL PRIMARY KEY,
-                user_id BIGINT NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
                 lab TEXT NOT NULL,
                 at TEXT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS payments (
-                id BIGSERIAL PRIMARY KEY,
-                user_id BIGINT NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
                 amount NUMERIC(12, 2) NOT NULL,
                 utr TEXT NOT NULL UNIQUE,
                 status TEXT NOT NULL DEFAULT 'pending',
@@ -68,6 +63,7 @@ def init_tracking():
             );
             """
         )
+        conn.commit()
     finally:
         conn.close()
 
@@ -93,7 +89,10 @@ def track_activity():
         return
 
     if not session.get("_login_logged"):
-        db_run("INSERT INTO logins (user_id, at) VALUES (?, ?)", (uid, _now()))
+        db_run(
+            "INSERT INTO logins (user_id, at) VALUES (?, ?)",
+            (uid, _now()),
+        )
         session["_login_logged"] = True
 
     if request.method == "GET":
@@ -166,11 +165,11 @@ USERS_SQL = """
 SELECT u.id, u.username, u.email, u.created_at,
   (SELECT MAX(at) FROM logins WHERE user_id = u.id) AS last_login,
   (SELECT COUNT(*) FROM logins WHERE user_id = u.id) AS login_count,
-  (SELECT STRING_AGG(DISTINCT lab, ',') FROM lab_visits WHERE user_id = u.id) AS labs,
+  (SELECT GROUP_CONCAT(DISTINCT lab) FROM lab_visits WHERE user_id = u.id) AS labs,
   (SELECT lab FROM lab_visits WHERE user_id = u.id ORDER BY at DESC LIMIT 1) AS current_lab,
   (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE user_id = u.id AND status = 'verified') AS paid
 FROM users u
-ORDER BY (SELECT MAX(at) FROM logins WHERE user_id = u.id) DESC NULLS LAST
+ORDER BY (SELECT MAX(at) FROM logins WHERE user_id = u.id) DESC
 """
 
 ACTIVITY_SQL = """
@@ -190,42 +189,33 @@ def admin_dashboard():
     conn = get_db()
 
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(USERS_SQL)
-            users = cur.fetchall()
+        users = conn.execute(USERS_SQL).fetchall()
 
-            cur.execute(
-                "SELECT p.*, u.username, u.email FROM payments p JOIN users u ON u.id = p.user_id "
-                "WHERE p.status = 'pending' ORDER BY p.created_at DESC"
-            )
-            pending = cur.fetchall()
+        pending = conn.execute(
+            "SELECT p.*, u.username, u.email FROM payments p JOIN users u ON u.id = p.user_id "
+            "WHERE p.status = 'pending' ORDER BY p.created_at DESC"
+        ).fetchall()
 
-            cur.execute(
-                "SELECT p.*, u.username FROM payments p JOIN users u ON u.id = p.user_id "
-                "WHERE p.status != 'pending' ORDER BY p.created_at DESC LIMIT 100"
-            )
-            history = cur.fetchall()
+        history = conn.execute(
+            "SELECT p.*, u.username FROM payments p JOIN users u ON u.id = p.user_id "
+            "WHERE p.status != 'pending' ORDER BY p.created_at DESC LIMIT 100"
+        ).fetchall()
 
-            cur.execute(ACTIVITY_SQL)
-            activity = cur.fetchall()
+        activity = conn.execute(ACTIVITY_SQL).fetchall()
 
-            cur.execute(
-                "SELECT v.lab AS lab, u.username AS username, COUNT(*) AS visits, MAX(v.at) AS last_at "
-                "FROM lab_visits v JOIN users u ON u.id = v.user_id "
-                "GROUP BY v.lab, u.id ORDER BY v.lab, last_at DESC"
-            )
-            by_lab = cur.fetchall()
+        by_lab = conn.execute(
+            "SELECT v.lab AS lab, u.username AS username, COUNT(*) AS visits, MAX(v.at) AS last_at "
+            "FROM lab_visits v JOIN users u ON u.id = v.user_id "
+            "GROUP BY v.lab, u.id ORDER BY v.lab, last_at DESC"
+        ).fetchall()
 
-            cur.execute(
-                convert_placeholders(
-                    "SELECT (SELECT COUNT(*) FROM users) AS users, "
-                    "(SELECT COUNT(DISTINCT user_id) FROM payments WHERE status = 'verified') AS payers, "
-                    "(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'verified') AS total, "
-                    "(SELECT COUNT(DISTINCT user_id) FROM logins WHERE at >= ?) AS active"
-                ),
-                (day_ago,),
-            )
-            stats = cur.fetchone()
+        stats = conn.execute(
+            "SELECT (SELECT COUNT(*) FROM users) AS users, "
+            "(SELECT COUNT(DISTINCT user_id) FROM payments WHERE status = 'verified') AS payers, "
+            "(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'verified') AS total, "
+            "(SELECT COUNT(DISTINCT user_id) FROM logins WHERE at >= ?) AS active",
+            (day_ago,),
+        ).fetchone()
 
     finally:
         conn.close()
@@ -249,31 +239,29 @@ def admin_delete_user(user_id):
     conn = get_db()
 
     try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT id, username FROM users WHERE id = %s",
+        user = conn.execute(
+            "SELECT id, username FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        # Delete associated records before deleting the user.
+        for table in ("payments", "lab_visits", "logins", "password_resets"):
+            conn.execute(
+                f"DELETE FROM {table} WHERE user_id = ?",
                 (user_id,),
             )
-            user = cur.fetchone()
 
-            if not user:
-                flash("User not found.", "error")
-                return redirect(url_for("admin_dashboard"))
-
-            # Delete associated records before deleting the user.
-            for table in ("payments", "lab_visits", "logins", "password_resets"):
-                cur.execute(
-                    f"DELETE FROM {table} WHERE user_id = %s",
-                    (user_id,),
-                )
-
-            cur.execute(
-                "DELETE FROM users WHERE id = %s",
-                (user_id,),
-            )
+        conn.execute(
+            "DELETE FROM users WHERE id = ?",
+            (user_id,),
+        )
 
         conn.commit()
-        flash(f"User {user[1]} deleted successfully.", "success")
+        flash(f"User {user['username']} deleted successfully.", "success")
 
     except Exception:
         conn.rollback()
@@ -292,7 +280,10 @@ def admin_payment(pid):
     action = request.form.get("action")
 
     if action in ("verified", "rejected"):
-        db_run("UPDATE payments SET status = ? WHERE id = ?", (action, pid))
+        db_run(
+            "UPDATE payments SET status = ? WHERE id = ?",
+            (action, pid),
+        )
 
     return redirect(url_for("admin_dashboard"))
 
@@ -324,8 +315,7 @@ def contribute_submit():
             )
             flash("Thank you! Your payment is submitted and awaiting verification.", "success")
 
-        except psycopg2.IntegrityError:
+        except sqlite3.IntegrityError:
             flash("This reference number was already submitted.", "error")
 
     return redirect(url_for("contribute"))
-

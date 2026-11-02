@@ -1,5 +1,7 @@
-{% extends "auth_base.html" %} {% block title %}Register | Learning Labs{%
-endblock %} {% block content %}
+
+{% extends "auth_base.html" %}
+{% block title %}Register | Learning Labs{% endblock %}
+{% block content %}
 <h1>Create your account</h1>
 <p class="auth-sub">Sign up to start practicing in your own labs.</p>
 
@@ -8,58 +10,19 @@ endblock %} {% block content %}
 
   <div class="field">
     <label for="username">Username (3-30 characters)</label>
-    <input
-      id="username"
-      name="username"
-      type="text"
-      autocomplete="username"
-      minlength="3"
-      maxlength="30"
-      value="{{ request.form.get('username', '') }}"
-      required
-      autofocus
-    />
+    <input id="username" name="username" type="text"
+           autocomplete="username" minlength="3" maxlength="30"
+           value="{{ request.form.get('username', '') }}" required autofocus />
   </div>
 
   <div class="field">
     <label for="email">Email</label>
-    <input
-      id="email"
-      name="email"
-      type="email"
-      autocomplete="email"
-      value="{{ request.form.get('email', '') }}"
-      required
-    />
+    <input id="email" name="email" type="email"
+           autocomplete="email" value="{{ request.form.get('email', '') }}"
+           required />
   </div>
 
-  <div class="field">
-    <label for="password">Password (3-12 characters)</label>
-    <input
-      id="password"
-      name="password"
-      type="password"
-      autocomplete="new-password"
-      minlength="3"
-      maxlength="12"
-      required
-    />
-  </div>
-
-  <div class="field">
-    <label for="confirm">Confirm password</label>
-    <input
-      id="confirm"
-      name="confirm"
-      type="password"
-      autocomplete="new-password"
-      minlength="3"
-      maxlength="12"
-      required
-    />
-  </div>
-
-  <button class="auth-btn" type="submit">Register</button>
+  <button class="auth-btn" type="submit">Send verification code</button>
 </form>
 
 <p class="auth-switch">

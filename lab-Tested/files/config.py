@@ -26,3 +26,26 @@ def get_cursor(conn):
 
 def convert_placeholders(sql):
     return sql.replace("?", "%s")
+
+
+def execute_script(conn, sql):
+    with conn.cursor() as cur:
+        for statement in sql.split(";"):
+            statement = statement.strip()
+            if statement:
+                cur.execute(statement)
+    conn.commit()
+
+
+def fetch_all(conn, sql, params=None):
+    with get_cursor(conn) as cur:
+        cur.execute(convert_placeholders(sql), params or ())
+        return cur.fetchall()
+
+
+def fetch_one(conn, sql, params=None):
+    with get_cursor(conn) as cur:
+        cur.execute(convert_placeholders(sql), params or ())
+        return cur.fetchone()
+
+

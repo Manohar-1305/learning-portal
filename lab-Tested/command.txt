@@ -44,3 +44,5 @@ docker rm -f learning-labs
 docker run -d --name learning-labs --network learning-network -p 5000:5000 --env-file .env --env-file files/.env learning-labs:1.0
 
 docker exec learning-labs pip install simple-websocket
+
+docker exec -it learning-labs python -c "import sqlite3; c=sqlite3.connect('/app/users.db'); print(*c.execute('SELECT id, username, email, created_at FROM users').fetchall(), sep='\n')"

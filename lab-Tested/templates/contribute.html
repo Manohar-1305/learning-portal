@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contribute | Learning Labs</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <main class="labs-page">
+      <nav class="home-nav">
+        <a href="/" aria-label="Learning Labs home"
+          ><strong>Learning Labs</strong></a
+        >
+        <div class="nav-actions">
+          <a class="nav-link active" href="/contribute">Contribute</a>
+          {% if session.get('user') %}
+          <a class="login-btn" href="/logout">Logout ({{ session['user'] }})</a>
+          {% else %}
+          <a class="login-btn" href="/login">Login</a>
+          {% endif %}
+        </div>
+      </nav>
+
+      <section class="labs-heading">
+        <h1>Support Learning Labs</h1>
+        <p>
+          The labs are free to use. If they help your practice, a small
+          contribution helps cover server and maintenance costs and keeps new
+          labs coming. Contributions are completely voluntary.
+        </p>
+      </section>
+
+      <section class="contribute-card">
+        <h2>Choose an amount</h2>
+
+        <div class="amount-chips">
+          <button type="button" class="amount-chip" data-amount="49">
+            ₹49
+          </button>
+          <button type="button" class="amount-chip" data-amount="99">
+            ₹99
+          </button>
+          <button type="button" class="amount-chip" data-amount="199">
+            ₹199
+          </button>
+          <button type="button" class="amount-chip" data-amount="499">
+            ₹499
+          </button>
+        </div>
+
+        <div class="field custom-amount">
+          <label for="custom-amount">Or enter your own amount (₹)</label>
+          <input
+            id="custom-amount"
+            type="number"
+            min="1"
+            max="100000"
+            step="1"
+            inputmode="numeric"
+            placeholder="Any amount"
+          />
+        </div>
+
+        <button type="button" class="auth-btn pay-btn" id="pay-btn">
+          Pay with UPI
+        </button>
+
+        <div class="upi-id-row">
+          <span>UPI ID</span>
+          <code id="upi-id">{{ upi_id }}</code>
+          <button type="button" class="copy-btn" id="copy-btn">Copy</button>
+        </div>
+      </section>
+
+      <dialog class="qr-dialog" id="qr-dialog">
+        <h2>Scan to pay</h2>
+        <p class="auth-sub" id="qr-amount-label">
+          Scan with any UPI app and enter the amount.
+        </p>
+        <div class="qr-box">
+          <img id="qr-img" alt="UPI payment QR code" width="240" height="240" />
+        </div>
+        <p class="qr-payee">{{ payee }} &middot; {{ upi_id }}</p>
+        <div class="qr-actions">
+          <a class="auth-btn qr-open" id="upi-open" href="#">Open UPI app</a>
+          <button type="button" class="copy-btn" id="qr-close">Close</button>
+        </div>
+        <p class="qr-hint">
+          On mobile, tap "Open UPI app". On desktop, scan the QR with your
+          phone.
+        </p>
+      </dialog>
+    </main>
+
+    <script>
+      const UPI_ID = "{{ upi_id }}";
+      const PAYEE = "{{ payee }}";
+      const QR_URL = "{{ url_for('contribute_qr') }}";
+
+      const chips = document.querySelectorAll(".amount-chip");
+      const custom = document.getElementById("custom-amount");
+      const dialog = document.getElementById("qr-dialog");
+      const qrImg = document.getElementById("qr-img");
+      const amountLabel = document.getElementById("qr-amount-label");
+      const upiOpen = document.getElementById("upi-open");
+      let amount = "";
+
+      chips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          chips.forEach((c) => c.classList.remove("active"));
+          chip.classList.add("active");
+          amount = chip.dataset.amount;
+          custom.value = "";
+        });
+      });
+
+      custom.addEventListener("input", () => {
+        chips.forEach((c) => c.classList.remove("active"));
+        amount = custom.value;
+      });
+
+      document.getElementById("pay-btn").addEventListener("click", () => {
+        const value = parseFloat(amount);
+        const valid = value >= 1 && value <= 100000;
+        const query = valid ? "?amount=" + value.toFixed(2) : "";
+
+        qrImg.src = QR_URL + query;
+        amountLabel.textContent = valid
+          ? "Amount: ₹" + value.toFixed(2) + ". Scan with any UPI app."
+          : "Scan with any UPI app and enter the amount.";
+
+        let link =
+          "upi://pay?pa=" +
+          UPI_ID +
+          "&pn=" +
+          encodeURIComponent(PAYEE) +
+          "&cu=INR&tn=" +
+          encodeURIComponent("Learning Labs contribution");
+        if (valid) link += "&am=" + value.toFixed(2);
+        upiOpen.href = link;
+
+        dialog.showModal();
+      });
+
+      document
+        .getElementById("qr-close")
+        .addEventListener("click", () => dialog.close());
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+
+      const copyBtn = document.getElementById("copy-btn");
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(UPI_ID);
+          copyBtn.textContent = "Copied";
+        } catch (err) {
+          copyBtn.textContent = "Copy failed";
+        }
+        setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
+      });
+    </script>
+  </body>
+</html>

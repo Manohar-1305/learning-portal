@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin | Learning Labs</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <main class="labs-page">
+      <nav class="home-nav">
+        <a href="/" aria-label="Learning Labs home"
+          ><strong>Learning Labs &middot; Admin</strong></a
+        >
+        <div class="nav-actions">
+          <a class="login-btn" href="{{ url_for('admin_logout') }}">Logout</a>
+        </div>
+      </nav>
+
+      <section class="stat-grid">
+        <div class="stat-card">
+          <span>Total users</span><strong>{{ stats.users }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Active (24h)</span><strong>{{ stats.active }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Paid users</span><strong>{{ stats.payers }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Collected</span
+          ><strong>₹{{ '%.2f'|format(stats.total) }}</strong>
+        </div>
+      </section>
+
+      <h2 class="admin-h">Pending payments ({{ pending|length }})</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Amount</th>
+              <th>UTR</th>
+              <th>Submitted</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pending %}
+            <tr>
+              <td>{{ p.username }}</td>
+              <td>{{ p.email }}</td>
+              <td>₹{{ '%.2f'|format(p.amount) }}</td>
+              <td><code>{{ p.utr }}</code></td>
+              <td>{{ p.created_at|ist }}</td>
+              <td>
+                <form
+                  method="post"
+                  action="{{ url_for('admin_payment', pid=p.id) }}"
+                  class="inline-form"
+                >
+                  <input
+                    type="hidden"
+                    name="_csrf"
+                    value="{{ csrf_token() }}"
+                  />
+                  <button class="mini-btn ok" name="action" value="verified">
+                    Verify
+                  </button>
+                  <button class="mini-btn no" name="action" value="rejected">
+                    Reject
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="empty">No pending payments.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="admin-h">Users</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Enrolled labs</th>
+              <th>Currently in</th>
+              <th>Paid</th>
+              <th>Logins</th>
+              <th>Last login</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>{{ u.username }}</td>
+              <td>{{ u.email }}</td>
+              <td>
+                {% for l in (u.labs or '').split(',') if l %}<span class="tag"
+                  >{{ l|capitalize }}</span
+                >{% else %}—{% endfor %}
+              </td>
+              <td>
+                {% if u.current_lab %}<span class="tag paid"
+                  >{{ u.current_lab|capitalize }}</span
+                >{% else %}—{% endif %}
+              </td>
+              <td>
+                {% if u.paid > 0 %}<span class="tag paid"
+                  >₹{{ '%.2f'|format(u.paid) }}</span
+                >{% else %}<span class="tag unpaid">Not paid</span>{% endif %}
+              </td>
+              <td>{{ u.login_count }}</td>
+              <td>{{ u.last_login|ist }}</td>
+              <td>{{ u.created_at|ist }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="empty">No users yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="admin-h">Users by lab</h2>
+      {% for lab, rows in by_lab|groupby('lab') %}
+      <h3 class="admin-sub">
+        {{ lab|capitalize }}
+        <span class="tag"
+          >{{ rows|length }} user{{ 's' if rows|length != 1 }}</span
+        >
+      </h3>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Times opened</th>
+              <th>Last opened</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td>{{ r.username }}</td>
+              <td>{{ r.visits }}</td>
+              <td>{{ r.last_at|ist }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <tbody>
+            <tr>
+              <td class="empty">No lab activity yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+
+      <h2 class="admin-h">Payment history</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Amount</th>
+              <th>UTR</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in history %}
+            <tr>
+              <td>{{ p.username }}</td>
+              <td>₹{{ '%.2f'|format(p.amount) }}</td>
+              <td><code>{{ p.utr }}</code></td>
+              <td>
+                <span
+                  class="tag {{ 'paid' if p.status == 'verified' else 'unpaid' }}"
+                  >{{ p.status|capitalize }}</span
+                >
+              </td>
+              <td>{{ p.created_at|ist }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="empty">No payment history.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="admin-h">Recent activity</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Event</th>
+              <th>When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in activity %}
+            <tr>
+              <td>{{ a.username }}</td>
+              <td>
+                {% if a.kind == 'login' %}Logged in{% else %}Opened {{
+                a.detail|capitalize }} lab{% endif %}
+              </td>
+              <td>{{ a.at|ist }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" class="empty">No activity yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

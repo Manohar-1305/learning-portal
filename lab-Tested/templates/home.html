@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning Labs</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <main class="labs-page">
+      <nav class="home-nav">
+        <a href="/" aria-label="Learning Labs home"
+          ><strong>Learning Labs</strong></a
+        >
+        <div class="nav-actions">
+          {% if session.get('is_admin') %}
+          <a class="nav-link" href="/admin">Admin</a>
+          {% endif %}
+          <a class="nav-link" href="/new-account" target="_blank" rel="noopener"
+            >Add account</a
+          >
+          <a class="nav-link" href="/contribute">Contribute</a>
+          {% if session.get('user') %}
+          <a class="logout-btn" href="/logout"
+            >Logout ({{ session['user'] }})</a
+          >
+          {% else %}
+          <a class="login-btn" href="/login">Login</a>
+          {% endif %}
+        </div>
+      </nav>
+
+      <section class="labs-heading">
+        <h1>Create a learning server</h1>
+        <p>
+          Pick a lab and get your own live Linux environment in seconds, ready
+          for hands-on practice. Run real commands in a browser terminal, follow
+          the guided notes beside it, and learn by doing instead of just
+          reading. Your session is isolated, so you can experiment freely, break
+          things, and start fresh whenever you want.
+        </p>
+      </section>
+
+      <section class="labs-grid">
+        {% for slug, lab in labs.items() %}
+        <a class="lab-card" href="/{{ slug }}">
+          <!-- Redirect users to the login page before opening the selected lab -->
+          <!-- <a class="lab-card" href="/login?next=/{{ slug }}"> -->
+          <div class="lab-icon" aria-hidden="true">
+            {% if slug == "ansible" %}Ansible{% elif slug == "jenkins"
+            %}Jenkins{% else %}Bash{% endif %}
+          </div>
+          <h2>{{ lab.title }}</h2>
+          <p>{{ lab.description }}</p>
+          <span class="open-label">Open lab &rarr;</span>
+        </a>
+        {% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

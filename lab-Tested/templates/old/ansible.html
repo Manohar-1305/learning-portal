@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VM Ansible Lab</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='ansible.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+    />
+  </head>
+  <body>
+    <header class="page-header" id="pageHeader">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-icon">A</div>
+          <div>
+            <h1>VM Ansible Lab</h1>
+            <p>Ansible automation</p>
+          </div>
+        </div>
+
+        <nav class="top-navigation" aria-label="Main navigation">
+          <button class="nav-item" id="documentsButton" type="button">
+            Documents
+          </button>
+        </nav>
+
+        <section
+          class="progress-topbar"
+          id="progressPanel"
+          aria-label="Lab progress"
+        >
+          <div class="progress-topbar-heading">
+            <strong>Progress</strong>
+            <span id="progressPercent">0%</span>
+            <span id="progressCount">0 / 5 completed</span>
+          </div>
+
+          <div class="progress-track">
+            <div id="progressBar" class="progress-fill"></div>
+          </div>
+
+          <ul id="progressList" class="progress-list"></ul>
+
+          <div class="progress-actions">
+            <button id="progressCheckBtn" class="button primary" type="button">
+              Mark complete
+            </button>
+            <button
+              id="progressResetBtn"
+              class="button secondary"
+              type="button"
+            >
+              Reset
+            </button>
+          </div>
+
+          <div id="progressMessage" class="progress-message"></div>
+        </section>
+
+        <div class="host-info">
+          <span id="hostStatus" class="status-pill connected">Connected</span>
+          <button
+            id="refreshBtn"
+            class="icon-button"
+            type="button"
+            title="Refresh status"
+          >
+            ↻
+          </button>
+        </div>
+      </div>
+
+      <div class="top-disclaimer">
+        <strong>DISCLAIMER</strong>
+        <span>
+          This lab provisions temporary Ansible controller and client containers
+          on the configured remote host. All lab resources are automatically
+          destroyed after one hour, and no data is retained on the server after
+          its destruction.
+        </span>
+      </div>
+    </header>
+
+    <section class="top-controls">
+      <div class="host-selector">
+        <strong class="controls-title">ANSIBLE HOSTS</strong>
+
+        <div class="host-selector-list">
+          <button
+            class="host-item selected"
+            data-container="ansible-controller"
+            type="button"
+          >
+            <span class="host-dot"></span>
+            <span class="host-label">
+              <strong>ansible-controller</strong>
+              <small id="controllerStatus">Not created</small>
+            </span>
+          </button>
+
+          <button
+            class="host-item"
+            data-container="ansible-client"
+            type="button"
+          >
+            <span class="host-dot client-dot"></span>
+            <span class="host-label">
+              <strong>ansible-client</strong>
+              <small id="clientStatus">Not created</small>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cluster-controls">
+        <button id="createClusterBtn" class="button primary" type="button">
+          Create cluster
+        </button>
+        <button id="stopClusterBtn" class="button secondary" type="button">
+          Stop cluster
+        </button>
+        <button id="destroyClusterBtn" class="button danger" type="button">
+          Destroy cluster
+        </button>
+
+        <div class="timer-card">
+          <span>TIME REMAINING</span>
+          <strong id="clusterTimer">--:--:--</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="environment-heading">
+      <div>
+        <div class="eyebrow">ANSIBLE ENVIRONMENT</div>
+        <h2 id="activeHostTitle">ansible-controller</h2>
+        <p id="activeHostSubtitle">Controller terminal</p>
+      </div>
+
+      <div class="host-actions"></div>
+    </section>
+
+    <main class="workspace" id="workspace">
+      <section class="terminal-section panel" id="terminalPanel">
+        <div class="section-heading">
+          <div>
+            <h3>Terminal</h3>
+            <p id="terminalDescription">Select a host to open its terminal</p>
+          </div>
+
+          <div class="panel-tools">
+            <span id="terminalState" class="terminal-state">Not connected</span>
+            <button
+              id="terminalMaximizeBtn"
+              class="panel-tool-button"
+              type="button"
+              title="Maximize terminal"
+              aria-label="Maximize terminal"
+            >
+              ⛶
+            </button>
+          </div>
+        </div>
+
+        <div id="terminal" class="terminal"></div>
+      </section>
+
+      <div
+        id="horizontalSplitter"
+        class="horizontal-splitter"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Drag to resize terminal and documents"
+        tabindex="0"
+        title="Drag horizontally to resize panels"
+      >
+        <span></span>
+      </div>
+
+      <section id="documentsPanel" class="documents-panel panel">
+        <div class="section-heading">
+          <div>
+            <h3>Documents</h3>
+            <p>Ansible instructions and command reference</p>
+          </div>
+
+          <div class="panel-tools">
+            <button
+              id="documentMaximizeBtn"
+              class="panel-tool-button"
+              type="button"
+              title="Maximize documents"
+              aria-label="Maximize documents"
+            >
+              ⛶
+            </button>
+          </div>
+        </div>
+
+        <div class="document-actions">
+          <select id="documentSelect" aria-label="Select document">
+            <option value="">Select a document</option>
+          </select>
+          <button id="reloadDocsBtn" class="button secondary" type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div id="documentContent" class="document-content">
+          Select a document from the dropdown to view it here.
+        </div>
+      </section>
+    </main>
+
+    <div
+      id="verticalSplitter"
+      class="vertical-splitter"
+      role="separator"
+      aria-orientation="horizontal"
+      aria-label="Drag to resize panel height"
+      tabindex="0"
+      title="Drag vertically to resize panel height"
+    >
+      <span></span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="{{ url_for('static', filename='ansible.js') }}"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const documentsButton = document.getElementById("documentsButton");
+        const hostsButton = document.getElementById("hostsButton");
+        const documentsPanel = document.getElementById("documentsPanel");
+        const terminalPanel = document.getElementById("terminalPanel");
+        const documentSelect = document.getElementById("documentSelect");
+        const documentContent = document.getElementById("documentContent");
+        const reloadDocsBtn = document.getElementById("reloadDocsBtn");
+        const workspace = document.getElementById("workspace");
+        const horizontalSplitter =
+          document.getElementById("horizontalSplitter");
+        const verticalSplitter = document.getElementById("verticalSplitter");
+        const terminalMaximizeBtn = document.getElementById(
+          "terminalMaximizeBtn",
+        );
+        const documentMaximizeBtn = document.getElementById(
+          "documentMaximizeBtn",
+        );
+
+        let documentsCache = [];
+        let maximizedPanel = null;
+
+        function escapeHtml(value) {
+          return String(value).replace(/[&<>"']/g, function (character) {
+            return {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[character];
+          });
+        }
+
+        function inlineMarkdown(value) {
+          let text = escapeHtml(value);
+          text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+          text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+          text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+          return text;
+        }
+
+        function renderMarkdown(markdown) {
+          const lines = String(markdown).replace(/\r\n/g, "\n").split("\n");
+          const output = [];
+          let paragraph = [];
+          let codeLines = [];
+          let inCode = false;
+          let codeLanguage = "";
+          let listType = null;
+          let listItems = [];
+
+          function flushParagraph() {
+            if (paragraph.length) {
+              output.push(
+                "<p>" + inlineMarkdown(paragraph.join(" ").trim()) + "</p>",
+              );
+              paragraph = [];
+            }
+          }
+
+          function flushCode() {
+            output.push(
+              '<pre><code class="language-' +
+                escapeHtml(codeLanguage || "text") +
+                '">' +
+                escapeHtml(codeLines.join("\n")) +
+                "</code></pre>",
+            );
+            codeLines = [];
+            codeLanguage = "";
+          }
+
+          function flushList() {
+            if (listType && listItems.length) {
+              output.push(
+                "<" +
+                  listType +
+                  ">" +
+                  listItems
+                    .map((item) => "<li>" + inlineMarkdown(item) + "</li>")
+                    .join("") +
+                  "</" +
+                  listType +
+                  ">",
+              );
+            }
+            listType = null;
+            listItems = [];
+          }
+
+          for (const line of lines) {
+            const fence = line.match(/^\s*```([\w.+-]*)\s*$/);
+
+            if (fence) {
+              flushParagraph();
+              flushList();
+              if (inCode) {
+                flushCode();
+                inCode = false;
+              } else {
+                inCode = true;
+                codeLanguage = fence[1] || "text";
+              }
+              continue;
+            }
+
+            if (inCode) {
+              codeLines.push(line);
+              continue;
+            }
+
+            if (!line.trim()) {
+              flushParagraph();
+              flushList();
+              continue;
+            }
+
+            const heading = line.match(/^(#{1,6})\s+(.+)$/);
+            if (heading) {
+              flushParagraph();
+              flushList();
+              const level = heading[1].length;
+              output.push(
+                "<h" +
+                  level +
+                  ">" +
+                  inlineMarkdown(heading[2]) +
+                  "</h" +
+                  level +
+                  ">",
+              );
+              continue;
+            }
+
+            if (/^\s*---+\s*$/.test(line)) {
+              flushParagraph();
+              flushList();
+              output.push("<hr>");
+              continue;
+            }
+
+            const quote = line.match(/^\s*>\s?(.*)$/);
+            if (quote) {
+              flushParagraph();
+              flushList();
+              output.push(
+                "<blockquote><p>" +
+                  inlineMarkdown(quote[1]) +
+                  "</p></blockquote>",
+              );
+              continue;
+            }
+
+            const unordered = line.match(/^\s*[-*+]\s+(.+)$/);
+            if (unordered) {
+              flushParagraph();
+              if (listType !== "ul") {
+                flushList();
+                listType = "ul";
+              }
+              listItems.push(unordered[1]);
+              continue;
+            }
+
+            const ordered = line.match(/^\s*\d+\.\s+(.+)$/);
+            if (ordered) {
+              flushParagraph();
+              if (listType !== "ol") {
+                flushList();
+                listType = "ol";
+              }
+              listItems.push(ordered[1]);
+              continue;
+            }
+
+            flushList();
+            paragraph.push(line);
+          }
+
+          if (inCode) flushCode();
+          flushParagraph();
+          flushList();
+
+          return '<div class="markdown-body">' + output.join("\n") + "</div>";
+        }
+
+        documentsButton.addEventListener("click", function () {
+          documentsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+          documentsPanel.classList.add("documents-highlight");
+          window.setTimeout(function () {
+            documentsPanel.classList.remove("documents-highlight");
+          }, 1200);
+        });
+
+        hostsButton.addEventListener("click", function () {
+          terminalPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        async function loadDocuments() {
+          const previousSelection = documentSelect.value;
+
+          try {
+            const response = await fetch("/api/documents", {
+              cache: "no-store",
+            });
+            if (!response.ok) throw new Error("Unable to load documents.");
+
+            const result = await response.json();
+            if (!result.success || !Array.isArray(result.documents)) {
+              throw new Error("Invalid document response.");
+            }
+
+            documentsCache = result.documents;
+            documentSelect.replaceChildren();
+
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "Select a document";
+            documentSelect.appendChild(placeholder);
+
+            documentsCache.forEach(function (item) {
+              const option = document.createElement("option");
+              option.value = item.name;
+              option.textContent = item.title || item.name;
+              documentSelect.appendChild(option);
+            });
+
+            if (
+              previousSelection &&
+              documentsCache.some((item) => item.name === previousSelection)
+            ) {
+              documentSelect.value = previousSelection;
+              showSelectedDocument();
+            } else if (documentsCache.length === 0) {
+              documentContent.textContent =
+                "No documentation files found. Add .html, .md, or .txt files to the documents folder.";
+            } else {
+              documentContent.textContent =
+                "Select a document from the dropdown to view it here.";
+            }
+          } catch (error) {
+            documentContent.textContent =
+              error.message || "Unable to load documents.";
+          }
+        }
+
+        function showSelectedDocument() {
+          const selectedName = documentSelect.value;
+
+          if (!selectedName) {
+            documentContent.textContent =
+              "Select a document from the dropdown to view it here.";
+            return;
+          }
+
+          const selectedDocument = documentsCache.find(
+            (item) => item.name === selectedName,
+          );
+
+          if (!selectedDocument) {
+            documentContent.textContent = "Document not found.";
+            return;
+          }
+
+          const extension = selectedDocument.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+          if (extension === "html" || extension === "htm") {
+            const iframe = document.createElement("iframe");
+            iframe.className = "document-html-frame";
+            iframe.title = selectedDocument.title || selectedDocument.name;
+            iframe.setAttribute("sandbox", "");
+            iframe.setAttribute("loading", "lazy");
+            iframe.srcdoc = selectedDocument.content;
+            documentContent.replaceChildren(iframe);
+          } else if (extension === "md") {
+            documentContent.innerHTML = renderMarkdown(
+              selectedDocument.content,
+            );
+          } else {
+            const pre = document.createElement("pre");
+            pre.className = "document-text-source";
+            pre.textContent = selectedDocument.content;
+            documentContent.replaceChildren(pre);
+          }
+        }
+
+        function fitTerminal() {
+          try {
+            if (window.fitAddon && typeof window.fitAddon.fit === "function") {
+              window.fitAddon.fit();
+            }
+            window.dispatchEvent(new Event("resize"));
+          } catch (error) {
+            // The terminal may not be initialized yet.
+          }
+        }
+
+        function setMaximized(panel) {
+          const isAlreadyMaximized = maximizedPanel === panel;
+
+          workspace.classList.remove(
+            "terminal-maximized",
+            "documents-maximized",
+          );
+
+          if (isAlreadyMaximized) {
+            maximizedPanel = null;
+          } else {
+            maximizedPanel = panel;
+            workspace.classList.add(
+              panel === "terminal"
+                ? "terminal-maximized"
+                : "documents-maximized",
+            );
+          }
+
+          terminalMaximizeBtn.textContent =
+            maximizedPanel === "terminal" ? "⛶" : "⛶";
+          documentMaximizeBtn.textContent =
+            maximizedPanel === "documents" ? "⛶" : "⛶";
+
+          terminalMaximizeBtn.title =
+            maximizedPanel === "terminal"
+              ? "Restore terminal layout"
+              : "Maximize terminal";
+          documentMaximizeBtn.title =
+            maximizedPanel === "documents"
+              ? "Restore document layout"
+              : "Maximize documents";
+
+          terminalMaximizeBtn.setAttribute(
+            "aria-label",
+            terminalMaximizeBtn.title,
+          );
+          documentMaximizeBtn.setAttribute(
+            "aria-label",
+            documentMaximizeBtn.title,
+          );
+
+          window.requestAnimationFrame(fitTerminal);
+        }
+
+        terminalMaximizeBtn.addEventListener("click", function () {
+          setMaximized("terminal");
+        });
+
+        documentMaximizeBtn.addEventListener("click", function () {
+          setMaximized("documents");
+        });
+
+        function installHorizontalResize() {
+          let dragging = false;
+
+          horizontalSplitter.addEventListener("pointerdown", function (event) {
+            if (maximizedPanel) return;
+            dragging = true;
+            horizontalSplitter.setPointerCapture(event.pointerId);
+            document.body.classList.add("resizing-horizontal");
+            event.preventDefault();
+          });
+
+          horizontalSplitter.addEventListener("pointermove", function (event) {
+            if (!dragging || maximizedPanel) return;
+
+            const bounds = workspace.getBoundingClientRect();
+            const splitterWidth =
+              horizontalSplitter.getBoundingClientRect().width;
+            const availableWidth = bounds.width - splitterWidth - 20;
+            const relativeX = event.clientX - bounds.left;
+
+            const minWidth = Math.max(220, availableWidth * 0.2);
+            const maxWidth = availableWidth - minWidth;
+            const leftWidth = Math.max(minWidth, Math.min(relativeX, maxWidth));
+            const rightWidth = availableWidth - leftWidth;
+
+            workspace.style.setProperty("--terminal-width", leftWidth + "px");
+            workspace.style.setProperty("--documents-width", rightWidth + "px");
+            fitTerminal();
+          });
+
+          function stopDragging() {
+            dragging = false;
+            document.body.classList.remove("resizing-horizontal");
+            fitTerminal();
+          }
+
+          horizontalSplitter.addEventListener("pointerup", stopDragging);
+          horizontalSplitter.addEventListener("pointercancel", stopDragging);
+
+          horizontalSplitter.addEventListener("keydown", function (event) {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+
+            const bounds = workspace.getBoundingClientRect();
+            const current = terminalPanel.getBoundingClientRect().width;
+            const next = current + (event.key === "ArrowRight" ? 20 : -20);
+            const min = 220;
+            const max = bounds.width - 260;
+
+            workspace.style.setProperty(
+              "--terminal-width",
+              Math.max(min, Math.min(next, max)) + "px",
+            );
+            workspace.style.setProperty(
+              "--documents-width",
+              Math.max(
+                min,
+                bounds.width - Math.max(min, Math.min(next, max)) - 20,
+              ) + "px",
+            );
+            fitTerminal();
+          });
+        }
+
+        function installVerticalResize() {
+          let dragging = false;
+          let startY = 0;
+          let startHeight = 0;
+
+          verticalSplitter.addEventListener("pointerdown", function (event) {
+            if (maximizedPanel) return;
+            dragging = true;
+            startY = event.clientY;
+            startHeight = workspace.getBoundingClientRect().height;
+            verticalSplitter.setPointerCapture(event.pointerId);
+            document.body.classList.add("resizing-vertical");
+            event.preventDefault();
+          });
+
+          verticalSplitter.addEventListener("pointermove", function (event) {
+            if (!dragging || maximizedPanel) return;
+
+            const newHeight = Math.max(
+              300,
+              startHeight + event.clientY - startY,
+            );
+            workspace.style.height = newHeight + "px";
+            fitTerminal();
+          });
+
+          function stopDragging() {
+            dragging = false;
+            document.body.classList.remove("resizing-vertical");
+            fitTerminal();
+          }
+
+          verticalSplitter.addEventListener("pointerup", stopDragging);
+          verticalSplitter.addEventListener("pointercancel", stopDragging);
+
+          verticalSplitter.addEventListener("keydown", function (event) {
+            if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+            event.preventDefault();
+
+            const currentHeight = workspace.getBoundingClientRect().height;
+            const adjustment = event.key === "ArrowDown" ? 20 : -20;
+            workspace.style.height =
+              Math.max(300, currentHeight + adjustment) + "px";
+            fitTerminal();
+          });
+        }
+
+        documentSelect.addEventListener("change", showSelectedDocument);
+        reloadDocsBtn.addEventListener("click", loadDocuments);
+
+        installHorizontalResize();
+        installVerticalResize();
+        loadDocuments();
+
+        window.addEventListener("resize", fitTerminal);
+      });
+    </script>
+  </body>
+</html>

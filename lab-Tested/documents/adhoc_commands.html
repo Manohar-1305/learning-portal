@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ansible Ad Hoc Commands</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 25px;
+        background: #f5f8fb;
+        color: #080808;
+        font-family: Arial, sans-serif;
+        line-height: 1.7;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: auto;
+      }
+
+      h1 {
+        color: #f13207;
+        font-size: 30px;
+        margin-bottom: 25px;
+      }
+
+      h2 {
+        color: #58a6ff;
+        font-size: 22px;
+        margin-top: 35px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #30363d;
+        padding-bottom: 8px;
+      }
+
+      p {
+        font-size: 15px;
+        margin-bottom: 15px;
+      }
+
+      .code-box {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        margin: 15px 0 22px;
+        overflow: hidden;
+      }
+
+      .code-label {
+        display: block;
+        background: #21262d;
+        color: #8b949e;
+        padding: 9px 15px;
+        font-size: 13px;
+        font-weight: bold;
+        border-bottom: 1px solid #30363d;
+      }
+
+      pre {
+        margin: 0;
+        padding: 16px;
+        overflow-x: auto;
+      }
+
+      code {
+        color: #7ee787;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 14px;
+        white-space: pre;
+      }
+
+      .note-box {
+        background: #12251b;
+        border-left: 4px solid #3fb950;
+        padding: 15px 18px;
+        margin-top: 30px;
+        border-radius: 5px;
+        color: #c9d1d9;
+      }
+
+      .note-box strong {
+        color: #3fb950;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Ansible Ad Hoc Commands</h1>
+
+      <h2>1. What are Ansible Ad Hoc Commands?</h2>
+
+      <p>
+        Ansible ad hoc commands allow you to execute simple tasks on managed
+        nodes directly from the Ansible controller without creating a playbook.
+        They are useful for quick operations such as checking connectivity,
+        gathering system information, managing services, installing packages,
+        and copying files.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Command Syntax</span>
+        <pre><code>ansible &lt;host-pattern&gt; -m &lt;module&gt; -a "&lt;arguments&gt;"</code></pre>
+      </div>
+
+      <h2>2. Test Connectivity Using Ping</h2>
+
+      <p>
+        The ping module checks whether Ansible can connect to managed hosts and
+        execute Python-based Ansible modules. It does not send an ICMP network
+        ping.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Check all managed hosts</span>
+        <pre><code>ansible all -m ping</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Check a specific host</span>
+        <pre><code>ansible ansible-client -m ping</code></pre>
+      </div>
+
+      <h2>3. Execute Commands on All Hosts</h2>
+
+      <p>
+        Use the command module to execute a command on managed hosts. The
+        command module does not process shell operators such as pipes,
+        redirection, or command chaining.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Check hostname</span>
+        <pre><code>ansible all -m command -a "hostname"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Check current date</span>
+        <pre><code>ansible all -m command -a "date"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Check uptime</span>
+        <pre><code>ansible all -m command -a "uptime"</code></pre>
+      </div>
+
+      <h2>4. Execute Shell Commands</h2>
+
+      <p>
+        The shell module executes commands through the remote host's shell. Use
+        it when you need shell features such as pipes, redirection, environment
+        variables, or command chaining.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Check running processes</span>
+        <pre><code>ansible all -m shell -a "ps aux | head"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Check disk usage</span>
+        <pre><code>ansible all -m shell -a "df -h"</code></pre>
+      </div>
+
+      <h2>5. Gather System Information</h2>
+
+      <p>
+        The setup module collects facts about managed hosts, including operating
+        system details, memory, CPU, network interfaces, IP addresses, and
+        hardware information.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Gather all facts</span>
+        <pre><code>ansible all -m setup</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Gather operating system information</span>
+        <pre><code>ansible all -m setup -a "filter=ansible_distribution*"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Gather memory information</span>
+        <pre><code>ansible all -m setup -a "filter=ansible_memory_mb"</code></pre>
+      </div>
+
+      <h2>6. Create Directories</h2>
+
+      <p>
+        The file module manages files and directories on remote hosts. Use the
+        state=directory parameter to create a directory.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Create a directory</span>
+        <pre><code>ansible all -m file -a "path=/opt/ansible-demo state=directory"</code></pre>
+      </div>
+
+      <h2>7. Create Files</h2>
+
+      <p>
+        Use the file module with state=touch to create an empty file. If the
+        file already exists, Ansible updates its timestamps.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Create a file</span>
+        <pre><code>ansible all -m file -a "path=/tmp/ansible-demo.txt state=touch"</code></pre>
+      </div>
+
+      <h2>8. Copy Files to Managed Hosts</h2>
+
+      <p>
+        The copy module transfers files from the Ansible controller to managed
+        hosts. The destination directory must exist or be creatable by the
+        remote user.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Copy a file</span>
+        <pre><code>ansible all -m copy -a "src=/tmp/demo.txt dest=/tmp/demo.txt"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Copy content directly</span>
+        <pre><code>ansible all -m copy -a "content='Hello from Ansible' dest=/tmp/hello.txt"</code></pre>
+      </div>
+
+      <h2>9. Install Packages</h2>
+
+      <p>
+        The apt module manages packages on Debian-based systems such as Ubuntu.
+        Use become to execute package-management operations with elevated
+        privileges.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Update package cache</span>
+        <pre><code>ansible all -b -m apt -a "update_cache=yes"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Install Nginx</span>
+        <pre><code>ansible all -b -m apt -a "name=nginx state=present"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Remove Nginx</span>
+        <pre><code>ansible all -b -m apt -a "name=nginx state=absent"</code></pre>
+      </div>
+
+      <h2>10. Manage Services</h2>
+
+      <p>
+        The service module manages services on remote hosts. You can start,
+        stop, restart, and enable services using ad hoc commands.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Start Nginx</span>
+        <pre><code>ansible all -b -m service -a "name=nginx state=started"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Stop Nginx</span>
+        <pre><code>ansible all -b -m service -a "name=nginx state=stopped"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Restart Nginx</span>
+        <pre><code>ansible all -b -m service -a "name=nginx state=restarted"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Enable Nginx at boot</span>
+        <pre><code>ansible all -b -m service -a "name=nginx enabled=yes"</code></pre>
+      </div>
+
+      <h2>11. Execute Commands on a Specific Inventory Group</h2>
+
+      <p>
+        Ansible inventory groups allow you to target a collection of hosts
+        instead of executing commands against every managed host.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Execute against the clients group</span>
+        <pre><code>ansible clients -m ping</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Check uptime for the clients group</span>
+        <pre><code>ansible clients -m command -a "uptime"</code></pre>
+      </div>
+
+      <h2>12. Use a Custom Inventory File</h2>
+
+      <p>
+        The -i option specifies an inventory file. This is useful when you want
+        to execute commands using an inventory other than the default configured
+        inventory.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Specify an inventory file</span>
+        <pre><code>ansible all -i inventory.ini -m ping</code></pre>
+      </div>
+
+      <h2>13. Specify a Remote User</h2>
+
+      <p>
+        The -u option specifies the SSH user Ansible should use when connecting
+        to managed hosts.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Connect using a specific user</span>
+        <pre><code>ansible all -u ubuntu -m ping</code></pre>
+      </div>
+
+      <h2>14. Execute Commands with Elevated Privileges</h2>
+
+      <p>
+        The -b option enables privilege escalation (become). It is commonly used
+        for operations that require root permissions, such as installing
+        packages or managing system services.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Execute a command as root</span>
+        <pre><code>ansible all -b -m command -a "whoami"</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Use sudo password prompting</span>
+        <pre><code>ansible all -b -K -m command -a "whoami"</code></pre>
+      </div>
+
+      <h2>15. Check Ansible Inventory</h2>
+
+      <p>
+        The ansible-inventory command displays the hosts and groups defined in
+        your inventory configuration.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Display inventory</span>
+        <pre><code>ansible-inventory --list</code></pre>
+      </div>
+
+      <div class="code-box">
+        <span class="code-label">Display inventory graph</span>
+        <pre><code>ansible-inventory --graph</code></pre>
+      </div>
+
+      <h2>16. Limit Execution to a Specific Host</h2>
+
+      <p>
+        The --limit option restricts command execution to a specific host or a
+        subset of hosts matching the supplied pattern.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Run against one host</span>
+        <pre><code>ansible all --limit ansible-client -m ping</code></pre>
+      </div>
+
+      <h2>17. Check Ansible Version</h2>
+
+      <p>
+        Use the version command to check the installed Ansible version and
+        configuration details on the controller.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">Check Ansible version</span>
+        <pre><code>ansible --version</code></pre>
+      </div>
+
+      <h2>18. General Ad Hoc Command Syntax</h2>
+
+      <p>
+        The following syntax summarizes the commonly used options in Ansible ad
+        hoc commands.
+      </p>
+
+      <div class="code-box">
+        <span class="code-label">General Syntax</span>
+        <pre><code>ansible &lt;host-pattern&gt; \
+  -i &lt;inventory-file&gt; \
+  -u &lt;remote-user&gt; \
+  -b \
+  -m &lt;module&gt; \
+  -a "&lt;module-arguments&gt;"</code></pre>
+      </div>
+
+      <div class="note-box">
+        <strong>Important:</strong>
+        Ad hoc commands are intended for quick, one-time operations. For
+        repeatable tasks, multi-step automation, configuration management, and
+        complex workflows, use Ansible Playbooks.
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VM Ansible Lab</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='ansible.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+    />
+
+    <style>
+      .document-content {
+        color: #dce6f6;
+        font-size: 13px;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+      }
+
+      .document-html-frame {
+        display: block;
+        width: 100%;
+        min-height: 650px;
+        height: 75vh;
+        border: 1px solid #2a3954;
+        border-radius: 8px;
+        background: #121b2e;
+      }
+
+      .document-content .markdown-body h1 {
+        color: #ffffff;
+        font-size: 26px;
+        margin: 0 0 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #2a3954;
+      }
+
+      .document-content .markdown-body h2 {
+        color: #78a7ff;
+        font-size: 19px;
+        margin: 28px 0 12px;
+      }
+
+      .document-content .markdown-body h3 {
+        color: #ffffff;
+        font-size: 15px;
+        margin: 22px 0 10px;
+      }
+
+      .document-content .markdown-body p {
+        margin: 10px 0 16px;
+      }
+
+      .document-content .markdown-body pre {
+        display: block;
+        margin: 12px 0 20px;
+        padding: 16px;
+        overflow-x: auto;
+        white-space: pre;
+        border: 1px solid #2a3954;
+        border-left: 4px solid #3478f6;
+        border-radius: 7px;
+        background: #080d18;
+        color: #b8f5d9;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .document-content .markdown-body pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        font-family: Consolas, "Courier New", monospace;
+      }
+
+      .document-content .markdown-body :not(pre) > code {
+        padding: 3px 6px;
+        border: 1px solid #2a3954;
+        border-radius: 4px;
+        background: #25344d;
+        color: #a8c7ff;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+      }
+
+      .document-content .markdown-body blockquote {
+        margin: 16px 0;
+        padding: 10px 16px;
+        border-left: 3px solid #42d6a0;
+        border-radius: 4px;
+        background: #102c29;
+      }
+
+      .document-content .markdown-body ul,
+      .document-content .markdown-body ol {
+        padding-left: 25px;
+      }
+
+      .document-content .markdown-body li {
+        margin: 5px 0;
+      }
+
+      .document-content .markdown-body a {
+        color: #78a7ff;
+      }
+
+      .document-content .markdown-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+      }
+
+      .document-content .markdown-body th,
+      .document-content .markdown-body td {
+        padding: 9px 12px;
+        border: 1px solid #2a3954;
+        text-align: left;
+      }
+
+      .document-content .markdown-body th {
+        background: #17243b;
+        color: #ffffff;
+      }
+
+      /* Progress panel (right of terminal) */
+      .terminal-row {
+        display: flex;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .terminal-row > .terminal-section {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .progress-panel {
+        flex: 0 0 290px;
+        width: 290px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border: 1px solid #2a3954;
+        border-radius: 10px;
+        background: #121b2e;
+        color: #dce6f6;
+        overflow-y: auto;
+      }
+
+      .progress-panel h3 {
+        margin: 0;
+        color: #ffffff;
+        font-size: 15px;
+      }
+
+      .progress-panel p {
+        margin: 2px 0 0;
+        color: #8ea2c4;
+        font-size: 12px;
+      }
+
+      .progress-summary {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      .progress-summary #progressPercent {
+        color: #ffffff;
+        font-size: 26px;
+        font-weight: 700;
+      }
+
+      .progress-summary #progressCount {
+        color: #8ea2c4;
+        font-size: 12px;
+      }
+
+      .progress-track {
+        height: 10px;
+        border-radius: 999px;
+        background: #080d18;
+        border: 1px solid #2a3954;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        width: 0;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #3478f6, #42d6a0);
+        transition: width 0.4s ease;
+      }
+
+      .progress-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1 1 auto;
+        overflow-y: auto;
+      }
+
+      .progress-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid #2a3954;
+        border-radius: 7px;
+        background: #17243b;
+        font-size: 12px;
+      }
+
+      .progress-item .progress-icon {
+        flex: 0 0 20px;
+        text-align: center;
+      }
+
+      .progress-item.completed {
+        border-color: #1f6f55;
+        background: #102c29;
+        color: #b8f5d9;
+      }
+
+      .progress-item.completed .progress-icon {
+        color: #42d6a0;
+        font-weight: 700;
+      }
+
+      .progress-item.current {
+        border-color: #3478f6;
+        color: #ffffff;
+      }
+
+      .progress-item.current .progress-icon {
+        color: #78a7ff;
+      }
+
+      .progress-item.locked {
+        opacity: 0.55;
+      }
+
+      .progress-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .progress-message {
+        min-height: 16px;
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      .progress-message.success {
+        color: #42d6a0;
+      }
+
+      .progress-message.error {
+        color: #ff8a8a;
+      }
+
+      @media (max-width: 1100px) {
+        .terminal-row {
+          flex-direction: column;
+        }
+
+        .progress-panel {
+          flex: 0 0 auto;
+          width: auto;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">A</div>
+        <div>
+          <h1>VM Ansible Lab</h1>
+          <p>Ansible automation</p>
+        </div>
+      </div>
+
+      <div class="top-disclaimer">
+        <strong>DISCLAIMER</strong>
+        <span>
+          This lab provisions temporary Ansible controller and client containers
+          on the configured remote host. All lab resources are automatically
+          destroyed after one hour, and no data is retained on the server after
+          its destruction.
+        </span>
+      </div>
+      <div class="host-info">
+        <span id="hostStatus" class="status-pill connected">Connected</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-heading">
+          <h2>Hosts</h2>
+          <button id="refreshBtn" class="icon-button" title="Refresh status">
+            ↻
+          </button>
+        </div>
+
+        <a class="side-item" href="/">
+          <span class="side-icon">⌂</span>
+          <span>All labs</span>
+        </a>
+
+        <button class="side-item selected" id="hostsButton" type="button">
+          <span class="side-icon">▦</span>
+          <span>Hosts</span>
+        </button>
+
+        <button class="side-item" id="documentsButton" type="button">
+          <span class="side-icon">▤</span>
+          <span>Documents</span>
+        </button>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-label">ANSIBLE HOSTS</div>
+
+        <button
+          class="host-item selected"
+          data-container="ansible-controller"
+          type="button"
+        >
+          <span class="host-dot"></span>
+          <span class="host-label">
+            <strong>ansible-controller</strong>
+            <small id="controllerStatus">Not created</small>
+          </span>
+        </button>
+
+        <button class="host-item" data-container="ansible-client" type="button">
+          <span class="host-dot client-dot"></span>
+          <span class="host-label">
+            <strong>ansible-client</strong>
+            <small id="clientStatus">Not created</small>
+          </span>
+        </button>
+
+        <div class="sidebar-bottom">
+          <button id="createClusterBtn" class="button primary full-width">
+            Create cluster
+          </button>
+          <button id="stopClusterBtn" class="button secondary full-width">
+            Stop cluster
+          </button>
+          <button id="destroyClusterBtn" class="button danger full-width">
+            Destroy cluster
+          </button>
+
+          <div class="timer-card">
+            <span>TIME REMAINING</span>
+            <strong id="clusterTimer">--:--:--</strong>
+          </div>
+        </div>
+      </aside>
+
+      <section class="main-panel">
+        <div class="main-heading">
+          <div>
+            <div class="eyebrow">ANSIBLE ENVIRONMENT</div>
+            <h2 id="activeHostTitle">ansible-controller</h2>
+            <p id="activeHostSubtitle">Controller terminal</p>
+          </div>
+
+          <div class="host-actions">
+            <button id="startBtn" class="button secondary">Start host</button>
+            <button id="stopBtn" class="button secondary">Stop host</button>
+            <button id="deleteBtn" class="button danger">Destroy host</button>
+          </div>
+        </div>
+
+        <!-- Terminal row: terminal on the left, progress panel on the right -->
+        <div class="terminal-row">
+          <section class="terminal-section" id="terminalPanel">
+            <div class="section-heading">
+              <div>
+                <h3>Terminal</h3>
+                <p id="terminalDescription">
+                  Select a host to open its terminal
+                </p>
+              </div>
+              <span id="terminalState" class="terminal-state">
+                Not connected
+              </span>
+            </div>
+
+            <div id="terminal" class="terminal"></div>
+          </section>
+
+          <!-- Progress panel -->
+          <aside class="progress-panel" id="progressPanel">
+            <div>
+              <h3>Progress</h3>
+              <p>Complete each document to unlock the next</p>
+            </div>
+
+            <div class="progress-summary">
+              <span id="progressPercent">0%</span>
+              <span id="progressCount">0 / 0 completed</span>
+            </div>
+
+            <div class="progress-track">
+              <div id="progressBar" class="progress-fill"></div>
+            </div>
+
+            <ul id="progressList" class="progress-list"></ul>
+
+            <div class="progress-actions">
+              <button
+                id="progressCheckBtn"
+                class="button primary full-width"
+                type="button"
+              >
+                Mark complete
+              </button>
+              <button
+                id="progressResetBtn"
+                class="button secondary full-width"
+                type="button"
+              >
+                Reset progress
+              </button>
+            </div>
+
+            <div id="progressMessage" class="progress-message"></div>
+          </aside>
+        </div>
+
+        <div
+          id="splitter"
+          class="splitter"
+          role="separator"
+          aria-label="Resize terminal and documents"
+          tabindex="0"
+        >
+          <span></span>
+        </div>
+
+        <section id="documentsPanel" class="documents-panel">
+          <div class="section-heading">
+            <div>
+              <h3>Documents</h3>
+              <p>Ansible instructions and command reference</p>
+            </div>
+
+            <div class="document-actions">
+              <select id="documentSelect" aria-label="Select document">
+                <option value="">Select a document</option>
+              </select>
+              <button id="reloadDocsBtn" class="button secondary">
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div id="documentContent" class="document-content">
+            Select a document from the dropdown to view it here.
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="{{ url_for('static', filename='ansible.js') }}"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const documentsButton = document.getElementById("documentsButton");
+        const hostsButton = document.getElementById("hostsButton");
+        const documentsPanel = document.getElementById("documentsPanel");
+        const terminalPanel = document.getElementById("terminalPanel");
+        const documentSelect = document.getElementById("documentSelect");
+        const documentContent = document.getElementById("documentContent");
+        const reloadDocsBtn = document.getElementById("reloadDocsBtn");
+
+        let documentsCache = [];
+
+        function escapeHtml(value) {
+          return String(value).replace(/[&<>"']/g, function (character) {
+            return {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[character];
+          });
+        }
+
+        function inlineMarkdown(value) {
+          let text = escapeHtml(value);
+
+          text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+          text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+          text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+
+          return text;
+        }
+
+        function renderMarkdown(markdown) {
+          const lines = String(markdown).replace(/\r\n/g, "\n").split("\n");
+          const output = [];
+          let paragraph = [];
+          let codeLines = [];
+          let inCode = false;
+          let codeLanguage = "";
+          let listType = null;
+          let listItems = [];
+
+          function flushParagraph() {
+            if (paragraph.length) {
+              output.push(
+                "<p>" + inlineMarkdown(paragraph.join(" ").trim()) + "</p>",
+              );
+              paragraph = [];
+            }
+          }
+
+          function flushCode() {
+            output.push(
+              '<pre><code class="language-' +
+                escapeHtml(codeLanguage || "text") +
+                '">' +
+                escapeHtml(codeLines.join("\n")) +
+                "</code></pre>",
+            );
+            codeLines = [];
+            codeLanguage = "";
+          }
+
+          function flushList() {
+            if (listType && listItems.length) {
+              output.push(
+                "<" +
+                  listType +
+                  ">" +
+                  listItems
+                    .map(function (item) {
+                      return "<li>" + inlineMarkdown(item) + "</li>";
+                    })
+                    .join("") +
+                  "</" +
+                  listType +
+                  ">",
+              );
+            }
+
+            listType = null;
+            listItems = [];
+          }
+
+          for (const line of lines) {
+            const fence = line.match(/^\s*```([\w.+-]*)\s*$/);
+
+            if (fence) {
+              flushParagraph();
+              flushList();
+
+              if (inCode) {
+                flushCode();
+                inCode = false;
+              } else {
+                inCode = true;
+                codeLanguage = fence[1] || "text";
+              }
+
+              continue;
+            }
+
+            if (inCode) {
+              codeLines.push(line);
+              continue;
+            }
+
+            if (!line.trim()) {
+              flushParagraph();
+              flushList();
+              continue;
+            }
+
+            const heading = line.match(/^(#{1,6})\s+(.+)$/);
+
+            if (heading) {
+              flushParagraph();
+              flushList();
+
+              const level = heading[1].length;
+              output.push(
+                "<h" +
+                  level +
+                  ">" +
+                  inlineMarkdown(heading[2]) +
+                  "</h" +
+                  level +
+                  ">",
+              );
+              continue;
+            }
+
+            if (/^\s*---+\s*$/.test(line)) {
+              flushParagraph();
+              flushList();
+              output.push("<hr>");
+              continue;
+            }
+
+            const quote = line.match(/^\s*>\s?(.*)$/);
+
+            if (quote) {
+              flushParagraph();
+              flushList();
+              output.push(
+                "<blockquote><p>" +
+                  inlineMarkdown(quote[1]) +
+                  "</p></blockquote>",
+              );
+              continue;
+            }
+
+            const unordered = line.match(/^\s*[-*+]\s+(.+)$/);
+
+            if (unordered) {
+              flushParagraph();
+
+              if (listType !== "ul") {
+                flushList();
+                listType = "ul";
+              }
+
+              listItems.push(unordered[1]);
+              continue;
+            }
+
+            const ordered = line.match(/^\s*\d+\.\s+(.+)$/);
+
+            if (ordered) {
+              flushParagraph();
+
+              if (listType !== "ol") {
+                flushList();
+                listType = "ol";
+              }
+
+              listItems.push(ordered[1]);
+              continue;
+            }
+
+            flushList();
+            paragraph.push(line);
+          }
+
+          if (inCode) {
+            flushCode();
+          }
+
+          flushParagraph();
+          flushList();
+
+          return '<div class="markdown-body">' + output.join("\n") + "</div>";
+        }
+
+        documentsButton.addEventListener("click", function () {
+          documentsPanel.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+
+          documentsPanel.classList.add("documents-highlight");
+
+          window.setTimeout(function () {
+            documentsPanel.classList.remove("documents-highlight");
+          }, 1200);
+        });
+
+        hostsButton.addEventListener("click", function () {
+          terminalPanel.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        });
+
+        async function loadDocuments() {
+          const previousSelection = documentSelect.value;
+
+          try {
+            const response = await fetch("/api/documents", {
+              cache: "no-store",
+            });
+
+            if (!response.ok) {
+              throw new Error("Unable to load documents.");
+            }
+
+            const result = await response.json();
+
+            if (!result.success || !Array.isArray(result.documents)) {
+              throw new Error("Invalid document response.");
+            }
+
+            documentsCache = result.documents;
+
+            documentSelect.replaceChildren();
+
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "Select a document";
+            documentSelect.appendChild(placeholder);
+
+            documentsCache.forEach(function (item) {
+              const option = document.createElement("option");
+              option.value = item.name;
+              option.textContent = item.title || item.name;
+              documentSelect.appendChild(option);
+            });
+
+            if (
+              previousSelection &&
+              documentsCache.some(function (item) {
+                return item.name === previousSelection;
+              })
+            ) {
+              documentSelect.value = previousSelection;
+              showSelectedDocument();
+            } else if (documentsCache.length === 0) {
+              documentContent.textContent =
+                "No documentation files found. Add .html, .md, or .txt files to the documents folder.";
+            } else {
+              documentContent.textContent =
+                "Select a document from the dropdown to view it here.";
+            }
+          } catch (error) {
+            documentContent.textContent =
+              error.message || "Unable to load documents.";
+          }
+        }
+
+        function showSelectedDocument() {
+          const selectedName = documentSelect.value;
+
+          if (!selectedName) {
+            documentContent.textContent =
+              "Select a document from the dropdown to view it here.";
+            return;
+          }
+
+          const selectedDocument = documentsCache.find(function (item) {
+            return item.name === selectedName;
+          });
+
+          if (!selectedDocument) {
+            documentContent.textContent = "Document not found.";
+            return;
+          }
+
+          const extension = selectedDocument.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+          if (extension === "html" || extension === "htm") {
+            const iframe = document.createElement("iframe");
+
+            iframe.className = "document-html-frame";
+            iframe.title = selectedDocument.title || selectedDocument.name;
+            iframe.setAttribute("sandbox", "");
+            iframe.setAttribute("loading", "lazy");
+            iframe.srcdoc = selectedDocument.content;
+
+            documentContent.replaceChildren(iframe);
+          } else if (extension === "md") {
+            documentContent.innerHTML = renderMarkdown(
+              selectedDocument.content,
+            );
+          } else {
+            const pre = document.createElement("pre");
+            pre.className = "document-text-source";
+            pre.textContent = selectedDocument.content;
+            documentContent.replaceChildren(pre);
+          }
+        }
+
+        documentSelect.addEventListener("change", showSelectedDocument);
+        reloadDocsBtn.addEventListener("click", loadDocuments);
+
+        loadDocuments();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Building Custom Ansible Modules in Python</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        color: #263238;
+        line-height: 1.7;
+        margin: 0;
+        padding: 30px 15px;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: auto;
+        background: #ffffff;
+        padding: 35px;
+        border-radius: 12px;
+      }
+
+      h1 {
+        color: #172554;
+        font-size: 30px;
+        margin-bottom: 10px;
+      }
+
+      h2 {
+        color: #1e40af;
+        margin-top: 35px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 8px;
+      }
+
+      h3 {
+        color: #334155;
+        margin-top: 25px;
+      }
+
+      p {
+        margin: 12px 0;
+      }
+
+      .intro {
+        color: #64748b;
+        font-size: 16px;
+      }
+
+      .step {
+        margin-bottom: 30px;
+      }
+
+      .code-container {
+        position: relative;
+        margin: 15px 0 22px;
+        background: #111827;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #1f2937;
+        color: #cbd5e1;
+        padding: 9px 15px;
+        font-size: 13px;
+      }
+
+      .copy-btn {
+        background: #334155;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .copy-btn:hover {
+        background: #475569;
+      }
+
+      pre {
+        margin: 0;
+        padding: 20px;
+        overflow-x: auto;
+        color: #e2e8f0;
+        font-size: 13px;
+        line-height: 1.65;
+        white-space: pre;
+      }
+
+      code {
+        font-family: Consolas, Monaco, monospace;
+      }
+
+      .inline-code {
+        background: #e2e8f0;
+        padding: 3px 6px;
+        border-radius: 4px;
+        color: #1e40af;
+        font-family: Consolas, monospace;
+      }
+
+      .info {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 15px;
+        margin: 18px 0;
+        border-radius: 5px;
+      }
+
+      .success {
+        background: #f0fdf4;
+        border-left: 4px solid #16a34a;
+        padding: 15px;
+        margin: 18px 0;
+        border-radius: 5px;
+      }
+
+      .warning {
+        background: #fff7ed;
+        border-left: 4px solid #ea580c;
+        padding: 15px;
+        margin: 18px 0;
+        border-radius: 5px;
+      }
+
+      .tree {
+        background: #f1f5f9;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: Consolas, monospace;
+        white-space: pre;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 18px 0;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        text-align: left;
+      }
+
+      th {
+        background: #f1f5f9;
+      }
+
+      .footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        color: #64748b;
+        font-size: 14px;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Building Custom Ansible Modules Using Python</h1>
+
+      <p class="intro">
+        A step-by-step practical guide to developing, configuring, and executing
+        a custom Ansible module on an Ubuntu virtual machine.
+      </p>
+
+      <h2>1. Introduction to Custom Ansible Modules</h2>
+
+      <p>
+        Ansible provides several built-in modules such as
+        <strong>apt, yum, copy, file, service, user, and command</strong>. These
+        modules help automate common system administration tasks.
+      </p>
+
+      <p>
+        However, there may be situations where the built-in modules do not
+        provide the functionality required for a particular automation task.
+      </p>
+
+      <p>
+        In such scenarios, we can develop our own custom Ansible modules using
+        Python.
+      </p>
+
+      <p>
+        A custom module allows us to implement our own logic and execute it
+        through Ansible just like a normal built-in module.
+      </p>
+
+      <div class="info">
+        <strong>What are we building?</strong>
+        <p>
+          We will create a Python-based custom module named
+          <strong>ubuntu_system_info</strong>.
+        </p>
+        <p>
+          This module collects system information from an Ubuntu virtual machine
+          and returns the results to the Ansible Controller.
+        </p>
+      </div>
+
+      <h2>2. Lab Architecture</h2>
+
+      <p>We will use two Ubuntu virtual machines:</p>
+
+      <table>
+        <tr>
+          <th>Machine</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td>Ansible Controller</td>
+          <td>Develop the Python module and execute the playbook.</td>
+        </tr>
+        <tr>
+          <td>Ansible Client</td>
+          <td>
+            Target machine where the custom module collects system information.
+          </td>
+        </tr>
+      </table>
+
+      <div class="info">
+        The Ansible Controller communicates with the Ansible Client over SSH.
+        The client must have Python 3 available. The existing Ansible inventory
+        and SSH configuration are assumed to be already configured.
+      </div>
+
+      <h2>3. Understanding the Custom Module Architecture</h2>
+
+      <p>
+        Before creating the module, understand how Ansible executes custom
+        modules.
+      </p>
+
+      <p>The execution flow is:</p>
+
+      <div class="tree">
+        Ansible Controller | |-- Ansible Playbook | |-- Custom Python Module |
+        |-- Ansible SSH Connection | v Ansible Client | |-- Execute Python
+        Module |-- Collect System Information |-- Return JSON Result | v Ansible
+        Controller | |-- Display Module Output
+      </div>
+
+      <p>
+        The custom module uses Ansible's
+        <span class="inline-code">AnsibleModule</span> class. This class
+        provides functionality for accepting arguments, handling errors,
+        supporting check mode, and returning structured results.
+      </p>
+
+      <h2>4. Verify Ansible and Python Installation</h2>
+
+      <p>
+        Log in to the Ansible Controller and verify that Ansible is installed.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ansible Controller</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>ansible --version</code></pre>
+      </div>
+
+      <p>Verify Python 3:</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ansible Controller</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>python3 --version</code></pre>
+      </div>
+
+      <p>Verify that Python 3 is available on the Ansible Client too.</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ansible Client</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>python3 --version</code></pre>
+      </div>
+
+      <div class="warning">
+        Custom Python modules execute on the managed node. Therefore, the Python
+        interpreter and required dependencies must be available on the Ansible
+        Client.
+      </div>
+
+      <h2>5. Create the Project Directory</h2>
+
+      <p>
+        We will create a dedicated directory for our custom module. All module
+        files and the playbook will be maintained inside this directory.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ansible Controller</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>mkdir -p ~/ansible-custom-module/library
+
+cd ~/ansible-custom-module</code></pre>
+      </div>
+
+      <p>
+        The <strong>library</strong> directory is important because Ansible
+        automatically searches for custom modules in a library directory located
+        alongside the playbook.
+      </p>
+
+      <h3>Expected Project Structure</h3>
+
+      <div class="tree">
+        ansible-custom-module/ | |-- library/ | | | |-- ubuntu_system_info.py |
+        |-- ubuntu_system_info.yaml
+      </div>
+
+      <h2>6. Develop the Custom Python Module</h2>
+
+      <p>Now we will create the actual Python module.</p>
+
+      <p>Module name: <strong>ubuntu_system_info</strong></p>
+
+      <p>Python filename: <strong>ubuntu_system_info.py</strong></p>
+
+      <p>Create the Python file using the following command:</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Terminal</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>cat > library/ubuntu_system_info.py &lt;&lt;'EOF'
+#!/usr/bin/python3
+
+from ansible.module_utils.basic import AnsibleModule
+import platform
+import socket
+import shutil
+import os
+import subprocess
+
+
+def get_memory():
+    memory = {}
+
+    with open("/proc/meminfo", "r") as file:
+        for line in file:
+            key, value = line.split(":", 1)
+
+            if key in ["MemTotal", "MemAvailable"]:
+                memory[key] = int(value.strip().split()[0]) // 1024
+
+    return {
+        "total_mb": memory.get("MemTotal", 0),
+        "available_mb": memory.get("MemAvailable", 0)
+    }
+
+
+def get_disk():
+    usage = shutil.disk_usage("/")
+
+    return {
+        "total_gb": round(usage.total / (1024 ** 3), 2),
+        "used_gb": round(usage.used / (1024 ** 3), 2),
+        "free_gb": round(usage.free / (1024 ** 3), 2)
+    }
+
+
+def get_ip():
+    try:
+        result = subprocess.check_output(
+            ["hostname", "-I"],
+            text=True
+        )
+
+        addresses = result.strip().split()
+
+        return addresses[0] if addresses else "Unknown"
+
+    except Exception:
+        return "Unknown"
+
+
+def get_os():
+    os_info = {}
+
+    with open("/etc/os-release", "r") as file:
+        for line in file:
+            if "=" in line:
+                key, value = line.strip().split("=", 1)
+                os_info[key] = value.strip('"')
+
+    return {
+        "name": os_info.get("NAME", "Unknown"),
+        "version": os_info.get("VERSION_ID", "Unknown")
+    }
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec={},
+        supports_check_mode=True
+    )
+
+    try:
+
+        system_info = {
+            "hostname": socket.gethostname(),
+            "os": get_os(),
+            "kernel": platform.release(),
+            "architecture": platform.machine(),
+            "cpu_count": os.cpu_count(),
+            "memory": get_memory(),
+            "disk": get_disk(),
+            "ip_address": get_ip()
+        }
+
+        module.exit_json(
+            changed=False,
+            system_info=system_info
+        )
+
+    except Exception as error:
+
+        module.fail_json(
+            msg="Failed to collect system information: {}".format(error)
+        )
+
+
+if __name__ == "__main__":
+    main()
+EOF</code></pre>
+      </div>
+
+      <h2>7. Understanding the Python Module Code</h2>
+
+      <h3>7.1 Import Required Libraries</h3>
+
+      <p>
+        We import Python libraries that help us collect information from the
+        Ubuntu operating system.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>from ansible.module_utils.basic import AnsibleModule
+import platform
+import socket
+import shutil
+import os
+import subprocess</code></pre>
+      </div>
+
+      <table>
+        <tr>
+          <th>Library</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td>AnsibleModule</td>
+          <td>Handles module arguments, execution and results.</td>
+        </tr>
+        <tr>
+          <td>platform</td>
+          <td>Collects kernel and architecture information.</td>
+        </tr>
+        <tr>
+          <td>socket</td>
+          <td>Collects the hostname.</td>
+        </tr>
+        <tr>
+          <td>shutil</td>
+          <td>Collects disk usage information.</td>
+        </tr>
+        <tr>
+          <td>os</td>
+          <td>Collects CPU count and provides operating system functions.</td>
+        </tr>
+        <tr>
+          <td>subprocess</td>
+          <td>Executes the hostname command to obtain IP addresses.</td>
+        </tr>
+        <tr>
+          <td>platform</td>
+          <td>Provides information about the underlying system.</td>
+        </tr>
+      </table>
+
+      <h3>7.2 Collect Memory Information</h3>
+
+      <p>
+        The <span class="inline-code">get_memory()</span> function reads the
+        Linux file <span class="inline-code">/proc/meminfo</span>.
+      </p>
+
+      <p>
+        It extracts total memory and available memory and converts the values
+        from KB to MB.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>def get_memory():
+    memory = {}
+
+    with open("/proc/meminfo", "r") as file:
+        for line in file:
+            key, value = line.split(":", 1)
+
+            if key in ["MemTotal", "MemAvailable"]:
+                memory[key] = int(value.strip().split()[0]) // 1024
+
+    return {
+        "total_mb": memory.get("MemTotal", 0),
+        "available_mb": memory.get("MemAvailable", 0)
+    }</code></pre>
+      </div>
+
+      <h3>7.3 Collect Disk Information</h3>
+
+      <p>
+        The <span class="inline-code">shutil.disk_usage()</span>
+        function retrieves total, used, and available disk space for the root
+        filesystem.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>def get_disk():
+    usage = shutil.disk_usage("/")
+
+    return {
+        "total_gb": round(usage.total / (1024 ** 3), 2),
+        "used_gb": round(usage.used / (1024 ** 3), 2),
+        "free_gb": round(usage.free / (1024 ** 3), 2)
+    }</code></pre>
+      </div>
+
+      <h3>7.4 Collect IP Address</h3>
+
+      <p>
+        The module executes the Linux hostname command to retrieve the IP
+        addresses assigned to the machine.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>def get_ip():
+    try:
+        result = subprocess.check_output(
+            ["hostname", "-I"],
+            text=True
+        )
+
+        addresses = result.strip().split()
+
+        return addresses[0] if addresses else "Unknown"
+
+    except Exception:
+        return "Unknown"</code></pre>
+      </div>
+
+      <h3>7.5 Collect Operating System Information</h3>
+
+      <p>
+        Ubuntu maintains operating system information in
+        <span class="inline-code">/etc/os-release</span>. We read this file to
+        retrieve the OS name and version.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>def get_os():
+    os_info = {}
+
+    with open("/etc/os-release", "r") as file:
+        for line in file:
+            if "=" in line:
+                key, value = line.strip().split("=", 1)
+                os_info[key] = value.strip('"')
+
+    return {
+        "name": os_info.get("NAME", "Unknown"),
+        "version": os_info.get("VERSION_ID", "Unknown")
+    }</code></pre>
+      </div>
+
+      <h3>7.6 Initialize AnsibleModule</h3>
+
+      <p>
+        This is one of the most important components of a custom Ansible module.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>module = AnsibleModule(
+    argument_spec={},
+    supports_check_mode=True
+)</code></pre>
+      </div>
+
+      <p>
+        <strong>argument_spec:</strong> Defines the input parameters accepted by
+        the custom module. In our example, the module does not require any input
+        arguments.
+      </p>
+
+      <p>
+        <strong>supports_check_mode:</strong> Indicates that the module supports
+        Ansible check mode. Since this module only collects information and does
+        not modify the system, it can safely return information without making
+        changes.
+      </p>
+
+      <h3>7.7 Return Module Results</h3>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>module.exit_json(
+    changed=False,
+    system_info=system_info
+)</code></pre>
+      </div>
+
+      <p>
+        <span class="inline-code">exit_json()</span> returns a successful result
+        to Ansible in JSON format.
+      </p>
+
+      <p>
+        <strong>changed=False</strong> indicates that the module did not modify
+        the target machine.
+      </p>
+
+      <p>
+        <span class="inline-code">system_info</span> contains the collected
+        system information.
+      </p>
+
+      <h3>7.8 Handle Module Errors</h3>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>module.fail_json(
+    msg="Failed to collect system information: {}".format(error)
+)</code></pre>
+      </div>
+
+      <p>
+        If an error occurs while collecting system information,
+        <span class="inline-code">fail_json()</span> returns a failure response
+        to Ansible.
+      </p>
+
+      <h2>8. Validate the Python Module</h2>
+
+      <p>Before executing the module, validate the Python syntax.</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ansible Controller</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>python3 -m py_compile library/ubuntu_system_info.py</code></pre>
+      </div>
+
+      <p>
+        If there are no syntax errors, the command completes without displaying
+        an error message.
+      </p>
+
+      <h2>9. Create the Ansible Playbook</h2>
+
+      <p>Now we need a playbook to execute the custom module.</p>
+
+      <p>
+        Create a YAML file named
+        <strong>ubuntu_system_info.yaml</strong>.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ansible Controller</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>cat > ubuntu_system_info.yaml &lt;&lt;'EOF'
+---
+- name: Run Ubuntu System Information Custom Module
+  hosts: ansible-client
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Collect Ubuntu system information
+      ubuntu_system_info:
+      register: result
+
+    - name: Display system information
+      debug:
+        var: result.system_info
+
+EOF</code></pre>
+      </div>
+
+      <h3>Understanding the Playbook</h3>
+
+      <table>
+        <tr>
+          <th>Parameter</th>
+          <th>Explanation</th>
+        </tr>
+        <tr>
+          <td>name</td>
+          <td>Describes the playbook.</td>
+        </tr>
+        <tr>
+          <td>hosts</td>
+          <td>Specifies the target Ansible Client.</td>
+        </tr>
+        <tr>
+          <td>become</td>
+          <td>Enables privilege escalation.</td>
+        </tr>
+        <tr>
+          <td>gather_facts</td>
+          <td>Disables automatic fact gathering.</td>
+        </tr>
+        <tr>
+          <td>ubuntu_system_info</td>
+          <td>Calls our custom Python module.</td>
+        </tr>
+        <tr>
+          <td>register</td>
+          <td>Stores the module result in a variable.</td>
+        </tr>
+        <tr>
+          <td>debug</td>
+          <td>Displays the collected information.</td>
+        </tr>
+      </table>
+
+      <div class="info">
+        <strong>How does Ansible find the module?</strong>
+        <p>
+          Ansible searches for custom modules in the local
+          <span class="inline-code">library</span> directory alongside the
+          playbook.
+        </p>
+        <p>
+          Therefore, the module can be called directly using
+          <span class="inline-code">ubuntu_system_info:</span>
+          without specifying its Python filename or module path.
+        </p>
+      </div>
+
+      <h2>10. Execute the Custom Module</h2>
+
+      <p>Navigate to the project directory on the Ansible Controller.</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Terminal</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>cd ~/ansible-custom-module</code></pre>
+      </div>
+
+      <p>Execute the playbook using the normal Ansible playbook command.</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Execute Playbook</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>ansible-playbook ubuntu_system_info.yaml</code></pre>
+      </div>
+
+      <h2>11. Expected Output</h2>
+
+      <p>
+        If the module executes successfully, Ansible returns the system
+        information collected from the Ubuntu Client.
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Sample Output</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>TASK [Collect Ubuntu system information] ********
+ok: [ansible-client]
+
+TASK [Display system information] ****************
+
+ok: [ansible-client] => {
+    "result.system_info": {
+        "hostname": "ansible-client",
+        "os": {
+            "name": "Ubuntu",
+            "version": "24.04"
+        },
+        "kernel": "6.8.0-...",
+        "architecture": "x86_64",
+        "cpu_count": 2,
+        "memory": {
+            "total_mb": 2048,
+            "available_mb": 1500
+        },
+        "disk": {
+            "total_gb": 20.0,
+            "used_gb": 5.0,
+            "free_gb": 15.0
+        },
+        "ip_address": "192.168.0.152"
+    }
+}
+
+PLAY RECAP ****************************************
+ansible-client : ok=2 changed=0 unreachable=0 failed=0</code></pre>
+      </div>
+
+      <div class="success">
+        <strong>Successful Execution</strong>
+        <p>
+          Your custom Ansible module has successfully collected system
+          information from the Ubuntu Client and returned the result to the
+          Ansible Controller.
+        </p>
+      </div>
+
+      <h2>12. How Ansible Executes the Custom Module</h2>
+
+      <p>When you execute:</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Command</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>ansible-playbook ubuntu_system_info.yaml</code></pre>
+      </div>
+
+      <p>Several operations take place:</p>
+
+      <ol>
+        <li>Ansible reads the YAML playbook.</li>
+        <li>Ansible identifies the target host.</li>
+        <li>
+          Ansible searches for the custom module in the library directory.
+        </li>
+        <li>Ansible prepares the module for execution on the managed node.</li>
+        <li>Ansible establishes an SSH connection to the Ubuntu Client.</li>
+        <li>The Python module executes on the Ubuntu Client.</li>
+        <li>
+          The module collects hostname, OS, CPU, memory, disk and IP
+          information.
+        </li>
+        <li>The module returns a JSON result.</li>
+        <li>
+          Ansible receives the result and stores it in the registered variable.
+        </li>
+        <li>The debug task displays the collected information.</li>
+      </ol>
+
+      <h2>13. Final Project Structure</h2>
+
+      <p>Your completed project should look like this:</p>
+
+      <div class="tree">
+        ansible-custom-module/ | |-- library/ | | | |-- ubuntu_system_info.py |
+        |-- ubuntu_system_info.yaml
+      </div>
+
+      <h2>14. Important Ansible Custom Module Concepts</h2>
+
+      <table>
+        <tr>
+          <th>Concept</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td>Custom Module</td>
+          <td>A Python program that extends Ansible functionality.</td>
+        </tr>
+        <tr>
+          <td>AnsibleModule</td>
+          <td>Provides the standard module interface.</td>
+        </tr>
+        <tr>
+          <td>argument_spec</td>
+          <td>Defines accepted module arguments.</td>
+        </tr>
+        <tr>
+          <td>exit_json()</td>
+          <td>Returns successful module output.</td>
+        </tr>
+        <tr>
+          <td>fail_json()</td>
+          <td>Returns module failure information.</td>
+        </tr>
+        <tr>
+          <td>register</td>
+          <td>Stores task output in a variable.</td>
+        </tr>
+        <tr>
+          <td>library</td>
+          <td>Directory where local custom modules are stored.</td>
+        </tr>
+        <tr>
+          <td>check mode</td>
+          <td>Allows a module to support Ansible's check-mode execution.</td>
+        </tr>
+      </table>
+
+      <h2>15. Conclusion</h2>
+
+      <p>
+        We have developed a custom Ansible module using Python and executed it
+        through a standard Ansible playbook.
+      </p>
+
+      <p>
+        This demonstrates how Ansible can be extended beyond its built-in
+        modules to implement custom automation requirements.
+      </p>
+
+      <p>
+        The same development approach can be used to build modules for Linux
+        administration, service management, application health checks,
+        infrastructure validation, monitoring and other automation requirements.
+      </p>
+
+      <div class="footer">
+        <p>Technical Tutorial | Ansible Custom Module Development | Python</p>
+      </div>
+    </div>
+
+    <script>
+      function copyCode(button) {
+        const code = button
+          .closest(".code-container")
+          .querySelector("pre code").innerText;
+
+        navigator.clipboard.writeText(code).then(() => {
+          const originalText = button.innerText;
+          button.innerText = "Copied!";
+
+          setTimeout(() => {
+            button.innerText = originalText;
+          }, 1500);
+        });
+      }
+    </script>
+  </body>
+</html>

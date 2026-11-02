@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Copy Module</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --surface: #121b2e;
+        --border: #2a3954;
+        --text: #edf3ff;
+        --muted: #94a6c1;
+        --blue: #78a7ff;
+        --green: #42d6a0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--surface);
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      h1 {
+        margin: 0 0 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        color: #fff;
+        font-size: 26px;
+      }
+
+      h2 {
+        margin: 28px 0 10px;
+        color: var(--blue);
+        font-size: 19px;
+      }
+
+      p {
+        margin: 10px 0;
+        color: #dce6f6;
+      }
+
+      .code-box {
+        margin: 12px 0 20px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--blue);
+        border-radius: 7px;
+        background: #080d18;
+      }
+
+      .code-label {
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #121b2e;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 14px;
+        overflow-x: auto;
+        color: var(--green);
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+      }
+
+      p code {
+        padding: 2px 5px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: #25344d;
+        color: var(--blue);
+      }
+
+      .important {
+        margin-top: 28px;
+        padding: 14px 16px;
+        border-left: 4px solid var(--green);
+        border-radius: 5px;
+        background: #102c29;
+      }
+
+      .important h2 {
+        margin: 0 0 8px;
+        color: var(--green);
+      }
+
+      .important p {
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Copy Module</h1>
+
+    <h2>1. Create a source file on the controller</h2>
+    <p>
+      Create a file on the Ansible controller that will be copied to the managed
+      host.
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Command</div>
+      <pre><code>echo "Welcome to Ansible learning" > message.txt</code></pre>
+    </div>
+
+    <h2>2. Copy a file using the Ansible copy module</h2>
+    <p>Run the following ad hoc command on the Ansible controller:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Ad hoc command</div>
+      <pre><code>ansible clients -m ansible.builtin.copy -a "src=message.txt dest=/tmp/message.txt"</code></pre>
+    </div>
+
+    <p>
+      The <code>src</code> parameter specifies the source file on the
+      controller, and <code>dest</code> specifies the destination path on the
+      managed host.
+    </p>
+
+    <p>Expected output on the first successful copy:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>ansible-client | CHANGED =&gt; {
+    "changed": true,
+    "dest": "/tmp/message.txt"
+}</code></pre>
+    </div>
+
+    <h2>3. Verify the copied file</h2>
+    <p>Run this command to read the file on the managed host:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Ad hoc command</div>
+      <pre><code>ansible clients -m ansible.builtin.command -a "cat /tmp/message.txt"</code></pre>
+    </div>
+
+    <p>Expected output:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>Welcome to Ansible learning</code></pre>
+    </div>
+
+    <h2>4. Create a YAML playbook</h2>
+    <p>Create a file named <code>copy.yml</code> on the Ansible controller.</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Create the YAML file</div>
+      <pre><code>cat > copy.yml <<'EOF'
+---
+- name: Copy a file to managed hosts
+  hosts: clients
+  become: true
+
+  tasks:
+    - name: Copy message file
+      ansible.builtin.copy:
+        src: message.txt
+        dest: /tmp/message.txt
+        owner: root
+        group: root
+        mode: '0644'
+EOF</code></pre>
+    </div>
+
+    <h2>5. Run the YAML playbook</h2>
+    <p>Execute the playbook:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Command</div>
+      <pre><code>ansible-playbook copy.yml</code></pre>
+    </div>
+
+    <p>Expected output summary:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>PLAY RECAP
+ansible-client : ok=2 changed=1 unreachable=0 failed=0</code></pre>
+    </div>
+
+    <h2>6. Verify the file permissions</h2>
+    <p>
+      Run the following command to check the file's permissions and ownership:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Ad hoc command</div>
+      <pre><code>ansible clients -b -m ansible.builtin.command -a "stat -c '%a %U %G %n' /tmp/message.txt"</code></pre>
+    </div>
+
+    <p>Expected output:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>644 root root /tmp/message.txt</code></pre>
+    </div>
+
+    <div class="important">
+      <h2>Important</h2>
+      <p>
+        The <code>ansible.builtin.copy</code> module copies files from the
+        controller to managed hosts by default. It is idempotent, so it does not
+        report a change when the destination already matches the desired content
+        and attributes.
+      </p>
+    </div>
+  </body>
+</html>

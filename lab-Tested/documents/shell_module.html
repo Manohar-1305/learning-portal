@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ansible Shell Module</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --surface: #121b2e;
+        --border: #2a3954;
+        --text: #edf3ff;
+        --muted: #94a6c1;
+        --blue: #78a7ff;
+        --green: #42d6a0;
+        --yellow: #f4cf78;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--surface);
+        color: var(--text);
+        font:
+          13px/1.75 "Segoe UI",
+          Arial,
+          sans-serif;
+      }
+
+      h1 {
+        margin: 0 0 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        color: #fff;
+        font-size: 26px;
+      }
+
+      h2 {
+        margin: 30px 0 12px;
+        color: var(--blue);
+        font-size: 19px;
+      }
+
+      h3 {
+        margin: 20px 0 8px;
+        color: #fff;
+        font-size: 15px;
+      }
+
+      p {
+        margin: 10px 0 14px;
+      }
+
+      li {
+        margin: 6px 0;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+      }
+
+      p code,
+      li code {
+        color: var(--blue);
+      }
+
+      .code-box {
+        margin: 12px 0 20px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--blue);
+        border-radius: 7px;
+        background: #080d18;
+      }
+
+      .code-label {
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #121b2e;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 14px;
+        overflow-x: auto;
+        color: var(--green);
+        font:
+          12px/1.8 Consolas,
+          "Courier New",
+          monospace;
+        white-space: pre;
+      }
+
+      .note {
+        margin: 20px 0;
+        padding: 14px 16px;
+        border-left: 4px solid var(--green);
+        border-radius: 5px;
+        background: #102c29;
+      }
+
+      .warning {
+        margin: 20px 0;
+        padding: 14px 16px;
+        border-left: 4px solid var(--yellow);
+        border-radius: 5px;
+        background: #302719;
+      }
+
+      .explanation {
+        margin: 12px 0 20px;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #17243b;
+      }
+
+      .explanation ul {
+        padding-left: 20px;
+      }
+
+      .step {
+        margin: 12px 0;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Ansible Shell Module — Complete Guide</h1>
+
+    <p>
+      The <code>ansible.builtin.shell</code> module executes commands on managed
+      hosts through a shell, usually <code>/bin/sh</code>. It supports shell
+      features such as pipes, redirection, command chaining, and
+      environment-variable expansion.
+    </p>
+
+    <div class="note">
+      <strong>Lab environment:</strong>
+      The Ansible controller runs Ansible commands. The managed host is
+      <code>ansible-client</code>. Run the commands below from the controller
+      terminal, unless otherwise specified.
+    </div>
+
+    <h2>1. Understand the module syntax</h2>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.shell -a 'uptime'</code></pre>
+    </div>
+
+    <div class="explanation">
+      <ul>
+        <li>
+          <code>ansible</code>: starts the Ansible ad-hoc command-line tool.
+        </li>
+        <li>
+          <code>ansible-client</code>: identifies the managed host in the
+          inventory.
+        </li>
+        <li><code>-m</code>: specifies which Ansible module to execute.</li>
+        <li>
+          <code>ansible.builtin.shell</code>: selects the built-in shell module.
+        </li>
+        <li><code>-a</code>: supplies arguments to the selected module.</li>
+        <li>
+          <code>'uptime'</code>: the shell command executed on the managed host.
+        </li>
+      </ul>
+    </div>
+
+    <h3>Expected result</h3>
+    <div class="code-box">
+      <div class="code-label">EXAMPLE OUTPUT</div>
+      <pre><code>ansible-client | CHANGED | rc=0 >>
+ 20:10:15 up 2 days, 3:21, 1 user, load average: 0.02, 0.04, 0.01</code></pre>
+    </div>
+
+    <p>
+      The actual output depends on the managed host. The <code>rc=0</code>
+      value indicates that the command exited successfully. Ansible may report
+      <code>CHANGED</code> for shell commands because it generally cannot
+      determine whether an arbitrary command changed the system.
+    </p>
+
+    <h2>2. Execute multiple commands</h2>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.shell -a 'whoami; hostname; date'</code></pre>
+    </div>
+
+    <p>This runs three commands in sequence on <code>ansible-client</code>.</p>
+
+    <div class="explanation">
+      <ul>
+        <li>
+          <code>whoami</code>: prints the effective username running the
+          command.
+        </li>
+        <li>
+          <code>;</code>: separates commands so the next command runs even if
+          the previous one fails.
+        </li>
+        <li><code>hostname</code>: prints the managed host's hostname.</li>
+        <li>
+          <code>date</code>: displays the managed host's current date and time.
+        </li>
+      </ul>
+    </div>
+
+    <h2>3. Execute a command using a pipe</h2>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.shell -a 'ps aux | grep sshd'</code></pre>
+    </div>
+
+    <div class="explanation">
+      <ul>
+        <li><code>ps aux</code>: lists running processes.</li>
+        <li>
+          <code>|</code>: sends the output of the command on the left to the
+          command on the right.
+        </li>
+        <li>
+          <code>grep sshd</code>: displays lines containing the text
+          <code>sshd</code>.
+        </li>
+      </ul>
+    </div>
+
+    <p>
+      The pipe is interpreted by the shell on the managed host. This is one
+      reason to use the shell module rather than the command module. The output
+      may include the <code>grep</code> process itself.
+    </p>
+
+    <h2>4. Redirect output to a file</h2>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.shell -a 'echo "Ansible test" > /tmp/ansible-test.txt'</code></pre>
+    </div>
+
+    <div class="explanation">
+      <ul>
+        <li><code>echo "Ansible test"</code>: produces the text to write.</li>
+        <li>
+          <code>&gt;</code>: redirects standard output into a file, replacing
+          its previous contents if the file exists.
+        </li>
+        <li>
+          <code>/tmp/ansible-test.txt</code>: the destination file on the
+          managed host.
+        </li>
+      </ul>
+    </div>
+
+    <h3>Verify the file contents</h3>
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.command -a 'cat /tmp/ansible-test.txt'</code></pre>
+    </div>
+
+    <p>Expected output:</p>
+    <div class="code-box">
+      <div class="code-label">OUTPUT</div>
+      <pre><code>Ansible test</code></pre>
+    </div>
+
+    <h2>5. Create a playbook using vi</h2>
+
+    <p>
+      Ad-hoc commands are useful for individual tasks. Playbooks let you
+      organize multiple tasks in a reusable YAML file.
+    </p>
+
+    <div class="step">
+      <strong>Step 1: Open or create the playbook.</strong>
+      <div class="code-box">
+        <div class="code-label">BASH — CONTROLLER TERMINAL</div>
+        <pre><code>vi shell-playbook.yml</code></pre>
+      </div>
+      <p>
+        <code>vi</code> opens the editor. If the file does not exist, it creates
+        the file when you save it.
+      </p>
+    </div>
+
+    <div class="step">
+      <strong>Step 2: Enter insert mode.</strong>
+      <p>Press the <code>i</code> key to start inserting text.</p>
+    </div>
+
+    <div class="step">
+      <strong>Step 3: Enter the following complete playbook.</strong>
+      <div class="code-box">
+        <div class="code-label">YAML — shell-playbook.yml</div>
+        <pre><code>---
+- name: Shell module example
+  hosts: ansible-client
+  gather_facts: false
+
+  tasks:
+    - name: Get system uptime
+      ansible.builtin.shell: uptime
+      register: uptime_output
+      changed_when: false
+
+    - name: Display uptime
+      ansible.builtin.debug:
+        var: uptime_output.stdout
+
+    - name: Check hostname
+      ansible.builtin.shell: hostname
+      register: hostname_output
+      changed_when: false
+
+    - name: Display hostname
+      ansible.builtin.debug:
+        var: hostname_output.stdout</code></pre>
+      </div>
+    </div>
+
+    <h3>Understand every playbook field</h3>
+
+    <div class="explanation">
+      <ul>
+        <li><code>---</code>: marks the beginning of the YAML document.</li>
+        <li><code>- name</code>: gives the play a readable description.</li>
+        <li>
+          <code>hosts: ansible-client</code>: selects the managed host. This
+          name must match an inventory host or group.
+        </li>
+        <li>
+          <code>gather_facts: false</code>: disables automatic fact gathering
+          for this play.
+        </li>
+        <li><code>tasks:</code>: begins the list of tasks to execute.</li>
+        <li><code>- name</code>: describes an individual task.</li>
+        <li>
+          <code>ansible.builtin.shell: uptime</code>: executes the uptime
+          command through a shell.
+        </li>
+        <li>
+          <code>register: uptime_output</code>: saves the result returned by the
+          task in a variable.
+        </li>
+        <li>
+          <code>changed_when: false</code>: reports this task as unchanged,
+          appropriate here because uptime only reads system information.
+        </li>
+        <li>
+          <code>ansible.builtin.debug</code>: displays information during
+          playbook execution.
+        </li>
+        <li>
+          <code>var: uptime_output.stdout</code>: prints the standard output
+          captured by the registered task.
+        </li>
+      </ul>
+    </div>
+
+    <p>
+      The hostname tasks follow the same pattern. The first runs
+      <code>hostname</code> and registers its result; the second displays
+      <code>hostname_output.stdout</code>.
+    </p>
+
+    <div class="step">
+      <strong>Step 4: Save and exit vi.</strong>
+      <ol>
+        <li>Press <code>Esc</code> to leave insert mode.</li>
+        <li>Type <code>:wq</code>.</li>
+        <li>Press <code>Enter</code>.</li>
+      </ol>
+      <p><code>:w</code> saves the file; <code>:q</code> exits the editor.</p>
+    </div>
+
+    <h2>6. Validate and execute the playbook</h2>
+
+    <h3>Step 1: Check the YAML and playbook syntax</h3>
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible-playbook --syntax-check shell-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      This checks whether Ansible can parse the playbook. It does not execute
+      the tasks or guarantee that the remote commands will succeed.
+    </p>
+
+    <h3>Step 2: Execute the playbook</h3>
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible-playbook shell-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      Ansible connects to <code>ansible-client</code>, executes each task in
+      order, registers the command results, and displays the captured output.
+    </p>
+
+    <h3>Expected result</h3>
+    <div class="code-box">
+      <div class="code-label">EXAMPLE OUTPUT — VALUES WILL VARY</div>
+      <pre><code>TASK [Get system uptime] ************************
+ok: [ansible-client]
+
+TASK [Display uptime] ***************************
+ok: [ansible-client] => {
+    "uptime_output.stdout": "20:10:15 up 2 days, 3:21, 1 user, load average: 0.02, 0.04, 0.01"
+}
+
+TASK [Check hostname] ***************************
+ok: [ansible-client]
+
+TASK [Display hostname] *************************
+ok: [ansible-client] => {
+    "hostname_output.stdout": "ansible-client"
+}
+
+PLAY RECAP ****************************************
+ansible-client : ok=4 changed=0 unreachable=0 failed=0</code></pre>
+    </div>
+
+    <h2>7. Specify the working directory</h2>
+
+    <div class="code-box">
+      <div class="code-label">YAML — TASK</div>
+      <pre><code>- name: List files in /tmp
+  ansible.builtin.shell: ls -la
+  args:
+    chdir: /tmp
+  changed_when: false</code></pre>
+    </div>
+
+    <div class="explanation">
+      <ul>
+        <li>
+          <code>args:</code>: supplies additional arguments to the module.
+        </li>
+        <li>
+          <code>chdir: /tmp</code>: changes to <code>/tmp</code> on the managed
+          host before executing the command.
+        </li>
+        <li>
+          <code>ls -la</code>: lists directory entries, including hidden
+          entries, with detailed information.
+        </li>
+        <li>
+          <code>changed_when: false</code>: prevents this read-only listing task
+          from being reported as changed.
+        </li>
+      </ul>
+    </div>
+
+    <h2>8. Shell module versus command module</h2>
+
+    <div class="explanation">
+      <p>
+        <strong>Shell module:</strong> invokes a shell, so pipes, redirection,
+        and shell syntax work.
+      </p>
+      <p>
+        <strong>Command module:</strong> executes a command without shell
+        interpretation. It is preferable for simple commands.
+      </p>
+    </div>
+
+    <div class="code-box">
+      <div class="code-label">BASH — SHELL MODULE</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.shell -a 'hostname; uptime'</code></pre>
+    </div>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND MODULE</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.command -a 'hostname'</code></pre>
+    </div>
+
+    <div class="warning">
+      <strong>Important:</strong>
+      Shell commands can have side effects. Use them only when needed, quote
+      variables carefully, and avoid inserting untrusted input into shell
+      commands. For file management, packages, and services, prefer dedicated
+      Ansible modules.
+    </div>
+  </body>
+</html>

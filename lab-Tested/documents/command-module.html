@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ansible Command Module</title>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --surface: #121b2e;
+        --border: #2a3954;
+        --text: #edf3ff;
+        --muted: #94a6c1;
+        --blue: #78a7ff;
+        --green: #42d6a0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--surface);
+        color: var(--text);
+        font:
+          13px/1.75 "Segoe UI",
+          Arial,
+          sans-serif;
+      }
+
+      body {
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 20px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        color: #fff;
+        font-size: 26px;
+      }
+
+      h2 {
+        margin: 28px 0 10px;
+        color: var(--blue);
+        font-size: 19px;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+      }
+
+      p code {
+        color: var(--blue);
+      }
+
+      /* Video button and player */
+
+      .video-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        padding: 9px 16px;
+        border: 1px solid #198754;
+        border-radius: 6px;
+        background: #198754;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .video-button:hover {
+        background: #157347;
+        border-color: #157347;
+        color: #fff;
+      }
+
+      .video-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        margin: 0 0 24px;
+        background: #000;
+      }
+
+      .video-container[hidden] {
+        display: none;
+      }
+
+      .video-container iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      /* Documentation content */
+
+      .code-box {
+        margin: 12px 0 20px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--blue);
+        border-radius: 7px;
+        background: #080d18;
+      }
+
+      .code-label {
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #121b2e;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 14px;
+        overflow-x: auto;
+        color: var(--green);
+        font:
+          12px/1.7 Consolas,
+          "Courier New",
+          monospace;
+        white-space: pre;
+      }
+
+      .note {
+        margin-top: 28px;
+        padding: 14px 16px;
+        border-left: 4px solid var(--green);
+        border-radius: 5px;
+        background: #102c29;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 14px;
+        }
+
+        h1 {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Ansible Command Module</h1>
+
+    <button
+      type="button"
+      class="video-button"
+      id="videoButton"
+      aria-expanded="false"
+    >
+      ▶ Watch Video
+    </button>
+
+    <div class="video-container" id="videoContainer" hidden>
+      <iframe
+        src="https://www.youtube-nocookie.com/embed/iE8y2UMWCsU?start=3&rel=0"
+        title="Ansible Command Module Tutorial"
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allow="
+          accelerometer;
+          autoplay;
+          clipboard-write;
+          encrypted-media;
+          gyroscope;
+          picture-in-picture;
+          web-share;
+        "
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <p>
+      The <code>ansible.builtin.command</code> module executes a command
+      directly on a managed host without invoking a shell. Shell features such
+      as pipes, redirection, variable expansion, and wildcard expansion are not
+      processed by a shell.
+    </p>
+
+    <p>
+      In this lab, the Ansible controller runs commands against the managed host
+      <code>ansible-client</code>. The examples assume that your inventory and
+      SSH connection are already configured.
+    </p>
+
+    <h2>1. Execute a command</h2>
+
+    <p>
+      Use the command module to check the system uptime on
+      <code>ansible-client</code>. The uptime command displays how long the
+      system has been running, along with its load averages.
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.command -a 'uptime'</code></pre>
+    </div>
+
+    <p>
+      <strong>Explanation:</strong> The <code>-m</code> option specifies the
+      Ansible module, and <code>-a</code> passes arguments to that module.
+      Ansible connects to the managed host and executes <code>uptime</code>.
+    </p>
+
+    <h2>2. Check the hostname</h2>
+
+    <p>
+      Run the <code>hostname</code> command to identify the name of the managed
+      host. This is useful for verifying that the command is running on the
+      expected machine.
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.command -a 'hostname'</code></pre>
+    </div>
+
+    <p>The output contains the hostname returned by the remote system.</p>
+
+    <h2>3. List files in a directory</h2>
+
+    <p>
+      Use <code>ls -la /tmp</code> to display files and directories in
+      <code>/tmp</code>, including hidden entries and detailed file information.
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — COMMAND</div>
+      <pre><code>ansible ansible-client -m ansible.builtin.command -a 'ls -la /tmp'</code></pre>
+    </div>
+
+    <p>
+      The command module passes the command and its arguments directly for
+      execution. It does not interpret shell operators or expand wildcards.
+    </p>
+
+    <h2>4. Create a playbook using vi</h2>
+
+    <p>
+      Instead of running commands individually, you can define them in a YAML
+      playbook and execute multiple tasks in sequence. Use
+      <code>vi</code> to create the playbook file on the Ansible controller.
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — CREATE THE PLAYBOOK</div>
+      <pre><code>vi command-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      When the editor opens, press <code>i</code> to enter Insert mode. Add the
+      following YAML content:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">YAML — command-playbook.yml</div>
+      <pre><code>---
+- name: Command module example
+  hosts: ansible-client
+  tasks:
+    - name: Get hostname
+      ansible.builtin.command:
+        cmd: hostname
+      register: hostname_output
+      changed_when: false
+
+    - name: Display hostname
+      ansible.builtin.debug:
+        var: hostname_output.stdout</code></pre>
+    </div>
+
+    <p>
+      Save the file by pressing <code>Esc</code>, typing <code>:wq</code>, and
+      pressing <code>Enter</code>.
+    </p>
+
+    <p>
+      <strong>Explanation:</strong> The <code>hosts</code> field selects the
+      managed host. The command task executes <code>hostname</code>, and
+      <code>register</code> stores the task result in
+      <code>hostname_output</code>. Setting <code>changed_when: false</code>
+      prevents this read-only task from being reported as a change. The debug
+      task displays the hostname from
+      <code>hostname_output.stdout</code>.
+    </p>
+
+    <h2>5. Execute the playbook</h2>
+
+    <p>Run the playbook from the directory where you saved it.</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — RUN THE PLAYBOOK</div>
+      <pre><code>ansible-playbook command-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      Ansible executes the hostname task on <code>ansible-client</code> and
+      displays the captured hostname through the debug task.
+    </p>
+
+    <h2>6. Specify the working directory</h2>
+
+    <p>
+      The <code>chdir</code> parameter changes the working directory before the
+      command runs. For example, use it to list the contents of
+      <code>/tmp</code> without putting the directory path in the command.
+    </p>
+
+    <p>Open the playbook for editing:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — EDIT THE PLAYBOOK</div>
+      <pre><code>vi command-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      Press <code>i</code> and add the following task under the existing
+      <code>tasks:</code> section, maintaining the same indentation as the other
+      tasks:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">YAML — TASK</div>
+      <pre><code>    - name: List files in /tmp
+      ansible.builtin.command:
+        cmd: ls -la
+        chdir: /tmp
+      changed_when: false</code></pre>
+    </div>
+
+    <p>
+      Press <code>Esc</code>, type <code>:wq</code>, and press
+      <code>Enter</code> to save the changes. Run the playbook again:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — RUN THE PLAYBOOK</div>
+      <pre><code>ansible-playbook command-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      The command now executes with <code>/tmp</code> as its working directory.
+      The <code>changed_when: false</code> setting is appropriate because
+      listing files does not modify them.
+    </p>
+
+    <h2>7. Use creates to avoid repeated execution</h2>
+
+    <p>
+      The <code>creates</code> parameter tells Ansible to skip the command if
+      the specified path already exists. This is useful for commands that should
+      run only once when creating a marker file.
+    </p>
+
+    <p>Open the playbook:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — EDIT THE PLAYBOOK</div>
+      <pre><code>vi command-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      Press <code>i</code> and add this task under the existing
+      <code>tasks:</code> section:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">YAML — TASK</div>
+      <pre><code>    - name: Create a marker file if it does not exist
+      ansible.builtin.command:
+        cmd: touch /tmp/ansible-marker
+        creates: /tmp/ansible-marker</code></pre>
+    </div>
+
+    <p>
+      Save and exit using <code>Esc</code>, <code>:wq</code>, and
+      <code>Enter</code>. Execute the playbook:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — RUN THE PLAYBOOK</div>
+      <pre><code>ansible-playbook command-playbook.yml</code></pre>
+    </div>
+
+    <p>
+      On the first run, Ansible creates <code>/tmp/ansible-marker</code> if the
+      file does not exist. On subsequent runs, Ansible skips the command when
+      that file is already present. This provides basic idempotent behavior for
+      this example.
+    </p>
+
+    <h2>8. Useful vi commands</h2>
+
+    <p>
+      These are the essential <code>vi</code> commands for editing and saving
+      Ansible playbooks:
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">VI — EDITOR SHORTCUTS</div>
+      <pre><code>vi command-playbook.yml   # Open or create the file
+i                         # Enter Insert mode
+Esc                       # Return to Normal mode
+:w                        # Save changes
+:q                        # Quit if there are no unsaved changes
+:wq                       # Save and quit
+:q!                       # Quit without saving changes</code></pre>
+    </div>
+
+    <h2>9. Validate the playbook</h2>
+
+    <p>
+      Before executing a playbook, use syntax checking to detect YAML or Ansible
+      playbook syntax errors.
+    </p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — SYNTAX CHECK</div>
+      <pre><code>ansible-playbook --syntax-check command-playbook.yml</code></pre>
+    </div>
+
+    <p>If the syntax check succeeds, execute the playbook:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — EXECUTION</div>
+      <pre><code>ansible-playbook command-playbook.yml</code></pre>
+    </div>
+
+    <div class="note">
+      <strong>Important:</strong>
+      Use <code>ansible.builtin.command</code> for simple commands that do not
+      require shell functionality. Use <code>ansible.builtin.shell</code> when
+      shell features such as pipes or redirection are necessary. Prefer
+      purpose-built Ansible modules for managing files, packages, and services
+      whenever suitable. When editing YAML with <code>vi</code>, preserve
+      indentation because YAML uses indentation to define its structure.
+    </div>
+
+    <script>
+      (() => {
+        const videoButton = document.getElementById("videoButton");
+        const videoContainer = document.getElementById("videoContainer");
+
+        if (!videoButton || !videoContainer) return;
+
+        videoButton.addEventListener("click", () => {
+          const isVisible = !videoContainer.hidden;
+
+          videoContainer.hidden = isVisible;
+          videoButton.setAttribute("aria-expanded", String(!isVisible));
+          videoButton.textContent = isVisible
+            ? "▶ Watch Video"
+            : "✕ Close Video";
+        });
+      })();
+    </script>
+  </body>
+</html>

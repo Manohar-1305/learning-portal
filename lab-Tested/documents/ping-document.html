@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ping Document</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --surface: #121b2e;
+        --border: #2a3954;
+        --text: #edf3ff;
+        --muted: #94a6c1;
+        --blue: #78a7ff;
+        --green: #42d6a0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--surface);
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      h1 {
+        margin: 0 0 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        color: #fff;
+        font-size: 26px;
+      }
+
+      h2 {
+        margin: 28px 0 10px;
+        color: var(--blue);
+        font-size: 19px;
+      }
+
+      p {
+        margin: 10px 0;
+        color: #dce6f6;
+      }
+
+      .code-box {
+        margin: 12px 0 20px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--blue);
+        border-radius: 7px;
+        background: #080d18;
+      }
+
+      .code-label {
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #121b2e;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 14px;
+        overflow-x: auto;
+        color: var(--green);
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+      }
+
+      p code {
+        padding: 2px 5px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: #25344d;
+        color: var(--blue);
+      }
+
+      .important {
+        margin-top: 28px;
+        padding: 14px 16px;
+        border-left: 4px solid var(--green);
+        border-radius: 5px;
+        background: #102c29;
+      }
+
+      .important h2 {
+        margin: 0 0 8px;
+        color: var(--green);
+      }
+
+      .important p {
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Ping Document</h1>
+
+    <h2>1. Check the inventory</h2>
+    <p>Run the following command on the Ansible controller:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Command</div>
+      <pre><code>ansible-inventory --list</code></pre>
+    </div>
+
+    <p>
+      The inventory should contain the <code>clients</code> group and the
+      <code>ansible-client</code> host.
+    </p>
+
+    <h2>2. Run the Ansible ping module</h2>
+    <p>Execute the following command:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Command</div>
+      <pre><code>ansible clients -m ansible.builtin.ping</code></pre>
+    </div>
+
+    <p>Expected result:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>ansible-client | SUCCESS =&gt; {
+    "changed": false,
+    "ping": "pong"
+}</code></pre>
+    </div>
+
+    <h2>3. Verify SSH connectivity</h2>
+    <p>Run this command to verify SSH access to the managed host:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Command</div>
+      <pre><code>ssh root@ansible-client hostname</code></pre>
+    </div>
+
+    <p>Expected output:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>ansible-client</code></pre>
+    </div>
+
+    <h2>4. Run a command on the managed host</h2>
+    <p>Execute a command remotely using Ansible:</p>
+
+    <div class="code-box">
+      <div class="code-label">BASH — Command</div>
+      <pre><code>ansible clients -m ansible.builtin.command -a 'hostname'</code></pre>
+    </div>
+
+    <p>Expected output:</p>
+
+    <div class="code-box">
+      <div class="code-label">OUTPUT — Expected result</div>
+      <pre><code>ansible-client</code></pre>
+    </div>
+
+    <div class="important">
+      <h2>Important</h2>
+      <p>
+        The Ansible ping module is not an ICMP network ping. It verifies that
+        Ansible can connect to the managed host and execute the module using
+        Python.
+      </p>
+    </div>
+  </body>
+</html>

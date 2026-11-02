@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ping Module</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='documents.css') }}"
+    />
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">A</div>
+        <div>
+          <h1>Docker Ansible Lab</h1>
+          <p>Configuration management and automation</p>
+        </div>
+      </div>
+
+      <nav>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link active" href="/documents">Documentation</a>
+      </nav>
+    </header>
+
+    <main class="page docs-page">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">REFERENCE LIBRARY</span>
+          <h2>Ping Module</h2>
+          <p>
+            Verify Ansible connectivity between the controller and the managed
+            host using commands executed directly in the terminal.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel" style="padding: 24px; margin-bottom: 24px">
+        <h3>1. Check the inventory</h3>
+        <p>Run the following command:</p>
+
+        <pre><code>ansible-inventory --list</code></pre>
+
+        <p>
+          The inventory should contain the <code>clients</code> group and the
+          <code>ansible-client</code> host.
+        </p>
+
+        <h3>2. Run the Ansible ping module</h3>
+        <p>Execute:</p>
+
+        <pre><code>ansible clients -m ansible.builtin.ping</code></pre>
+
+        <p>Expected result:</p>
+
+        <pre><code>ansible-client | SUCCESS =&gt; {
+    "changed": false,
+    "ping": "pong"
+}</code></pre>
+
+        <h3>3. Verify SSH connectivity</h3>
+        <p>Run:</p>
+
+        <pre><code>ssh root@ansible-client hostname</code></pre>
+
+        <p>Expected output:</p>
+
+        <pre><code>ansible-client</code></pre>
+
+        <h3>4. Run a command on the managed host</h3>
+        <p>Execute:</p>
+
+        <pre><code>ansible clients -m ansible.builtin.command -a 'hostname'</code></pre>
+
+        <p>Expected output:</p>
+
+        <pre><code>ansible-client</code></pre>
+
+        <h3>Important</h3>
+        <p>
+          The Ansible ping module is not an ICMP network ping. It verifies that
+          Ansible can connect to the managed host and execute the module using
+          Python.
+        </p>
+      </section>
+
+      <section class="hero">
+        <div>
+          <span class="eyebrow">DOCUMENT MANAGEMENT</span>
+          <h2>Manage documentation</h2>
+          <p>Read, create, edit, and delete Markdown documents for your lab.</p>
+        </div>
+        <button id="newDocumentBtn" class="button primary">New document</button>
+      </section>
+
+      <section class="docs-layout">
+        <aside class="panel docs-sidebar">
+          <div class="panel-heading">
+            <h3>Documents</h3>
+            <button id="reloadDocsBtn" class="button secondary small">
+              Refresh
+            </button>
+          </div>
+
+          <div id="documentList" class="document-list">
+            <p class="muted">Loading documents...</p>
+          </div>
+        </aside>
+
+        <section class="panel docs-editor">
+          <div class="editor-fields">
+            <label for="documentName">Document name</label>
+            <input
+              id="documentName"
+              type="text"
+              placeholder="Ping Module"
+              value="Ping Module"
+            />
+          </div>
+
+          <div class="editor-fields">
+            <label for="documentContent">Markdown content</label>
+            <textarea
+              id="documentContent"
+              spellcheck="false"
+              placeholder="# Ping Module"
+            >
+# Ping Module
+
+## 1. Check the inventory
+
+Run:
+
+```bash
+ansible-inventory --list
+```
+
+The inventory should contain the `clients` group and the `ansible-client` host.
+
+## 2. Run the Ansible ping module
+
+Run:
+
+```bash
+ansible clients -m ansible.builtin.ping
+```
+
+Expected result:
+
+```text
+ansible-client | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+## 3. Verify SSH connectivity
+
+Run:
+
+```bash
+ssh root@ansible-client hostname
+```
+
+Expected output:
+
+```text
+ansible-client
+```
+
+## 4. Run a command on the managed host
+
+Run:
+
+```bash
+ansible clients -m ansible.builtin.command -a 'hostname'
+```
+
+Expected output:
+
+```text
+ansible-client
+```
+
+## Important
+
+The Ansible ping module is not an ICMP network ping. It verifies that Ansible can connect to the managed host and execute the module using Python.</textarea
+            >
+          </div>
+
+          <div class="editor-actions">
+            <button id="saveDocumentBtn" class="button primary">
+              Save document
+            </button>
+            <button id="deleteDocumentBtn" class="button danger">
+              Delete document
+            </button>
+            <button id="previewDocumentBtn" class="button secondary">
+              Preview
+            </button>
+          </div>
+
+          <div id="documentMessage" class="message" role="status"></div>
+          <div id="documentPreview" class="document-preview hidden"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='documents.js') }}"></script>
+  </body>
+</html>

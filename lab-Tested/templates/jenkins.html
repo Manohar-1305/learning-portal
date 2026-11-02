@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VM Jenkins Lab</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">J</div>
+        <div>
+          <h1>VM Jenkins Lab</h1>
+          <p>CI/CD automation</p>
+        </div>
+      </div>
+      <div class="top-disclaimer">
+        <strong>DISCLAIMER</strong>
+        <span
+          >This lab creates one Jenkins server container on the configured
+          remote host. The web interface uses port 8080. Resources are
+          automatically destroyed after one hour.</span
+        >
+      </div>
+      <div class="host-info">
+        <span>Remote VM host</span>
+        <strong>{{ host_ip }}</strong>
+        <span id="hostStatus" class="status-pill">Checking connection</span>
+      </div>
+    </header>
+    <main class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-heading">
+          <h2>Hosts</h2>
+          <button id="refreshBtn" class="icon-button" title="Refresh status">
+            ↻
+          </button>
+        </div>
+        <a class="side-item" href="/"
+          ><span class="side-icon">⌂</span><span>All labs</span></a
+        >
+        <button class="side-item selected" id="hostsButton">
+          <span class="side-icon">▦</span><span>Hosts</span>
+        </button>
+        <button class="side-item" id="documentsButton">
+          <span class="side-icon">▤</span><span>Documents</span>
+        </button>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-label">JENKINS HOST</div>
+        <button class="host-item selected" data-container="jenkins-server">
+          <span class="host-dot"></span>
+          <span class="host-label"
+            ><strong>jenkins-server</strong
+            ><small id="jenkins-serverStatus">Not created</small></span
+          >
+        </button>
+        <div class="sidebar-bottom">
+          <button id="createClusterBtn" class="button primary full-width">
+            Create lab
+          </button>
+          <button id="stopClusterBtn" class="button secondary full-width">
+            Stop lab
+          </button>
+          <button id="destroyClusterBtn" class="button danger full-width">
+            Destroy lab
+          </button>
+          <div class="timer-card">
+            <span>TIME REMAINING</span
+            ><strong id="clusterTimer">--:--:--</strong>
+          </div>
+        </div>
+      </aside>
+      <section class="main-panel">
+        <div class="main-heading">
+          <div>
+            <div class="eyebrow">JENKINS ENVIRONMENT</div>
+            <h2 id="activeHostTitle">jenkins-server</h2>
+            <p id="activeHostSubtitle">Jenkins server terminal</p>
+            <p>
+              Jenkins URL:
+              <a
+                href="http://{{ host_ip }}:8080"
+                target="_blank"
+                rel="noopener noreferrer"
+                >http://{{ host_ip }}:8080</a
+              >
+            </p>
+          </div>
+          <div class="host-actions">
+            <button id="startBtn" class="button secondary">Start host</button>
+            <button id="stopBtn" class="button secondary">Stop host</button>
+            <button id="deleteBtn" class="button danger">Destroy host</button>
+          </div>
+        </div>
+        <section class="terminal-section">
+          <div class="section-heading">
+            <div>
+              <h3>Terminal</h3>
+              <p id="terminalDescription">Select a host to open its terminal</p>
+            </div>
+            <span id="terminalState" class="terminal-state">Not connected</span>
+          </div>
+          <div id="terminal" class="terminal"></div>
+        </section>
+        <div
+          id="splitter"
+          class="splitter"
+          role="separator"
+          aria-label="Resize terminal and documents"
+          tabindex="0"
+        >
+          <span></span>
+        </div>
+        <section id="documentsPanel" class="documents-panel">
+          <div class="section-heading">
+            <div>
+              <h3>Documents</h3>
+              <p>Jenkins setup, jobs, pipelines, and CI/CD command reference</p>
+            </div>
+            <div class="document-actions">
+              <select id="documentSelect" aria-label="Select document"></select>
+              <button id="reloadDocsBtn" class="button secondary">
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div id="documentContent" class="document-content">
+            Select Documents to load the documentation.
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="{{ url_for('static', filename='jenkins.js') }}"></script>
+  </body>
+</html>
+bash.html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VM Bash Lab</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">$</div>
+        <div>
+          <h1>VM Bash Lab</h1>
+          <p>Shell scripting and automation</p>
+        </div>
+      </div>
+      <div class="top-disclaimer">
+        <strong>DISCLAIMER</strong>
+        <span
+          >This lab creates one Bash practice container on the configured remote
+          host. Resources are automatically destroyed after one hour.</span
+        >
+      </div>
+      <div class="host-info">
+        <span>Remote VM host</span>
+        <strong>{{ host_ip }}</strong>
+        <span id="hostStatus" class="status-pill">Checking connection</span>
+      </div>
+    </header>
+    <main class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-heading">
+          <h2>Hosts</h2>
+          <button id="refreshBtn" class="icon-button" title="Refresh status">
+            ↻
+          </button>
+        </div>
+        <a class="side-item" href="/"
+          ><span class="side-icon">⌂</span><span>All labs</span></a
+        >
+        <button class="side-item selected" id="hostsButton">
+          <span class="side-icon">▦</span><span>Hosts</span>
+        </button>
+        <button class="side-item" id="documentsButton">
+          <span class="side-icon">▤</span><span>Documents</span>
+        </button>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-label">BASH HOST</div>
+        <button class="host-item selected" data-container="bash-server">
+          <span class="host-dot"></span>
+          <span class="host-label"
+            ><strong>bash-server</strong
+            ><small id="bash-serverStatus">Not created</small></span
+          >
+        </button>
+        <div class="sidebar-bottom">
+          <button id="createClusterBtn" class="button primary full-width">
+            Create lab
+          </button>
+          <button id="stopClusterBtn" class="button secondary full-width">
+            Stop lab
+          </button>
+          <button id="destroyClusterBtn" class="button danger full-width">
+            Destroy lab
+          </button>
+          <div class="timer-card">
+            <span>TIME REMAINING</span
+            ><strong id="clusterTimer">--:--:--</strong>
+          </div>
+        </div>
+      </aside>
+      <section class="main-panel">
+        <div class="main-heading">
+          <div>
+            <div class="eyebrow">BASH ENVIRONMENT</div>
+            <h2 id="activeHostTitle">bash-server</h2>
+            <p id="activeHostSubtitle">Bash practice terminal</p>
+          </div>
+          <div class="host-actions">
+            <button id="startBtn" class="button secondary">Start host</button>
+            <button id="stopBtn" class="button secondary">Stop host</button>
+            <button id="deleteBtn" class="button danger">Destroy host</button>
+          </div>
+        </div>
+        <section class="terminal-section">
+          <div class="section-heading">
+            <div>
+              <h3>Terminal</h3>
+              <p id="terminalDescription">Interactive Bash shell</p>
+            </div>
+            <span id="terminalState" class="terminal-state">Not connected</span>
+          </div>
+          <div id="terminal" class="terminal"></div>
+        </section>
+        <div
+          id="splitter"
+          class="splitter"
+          role="separator"
+          aria-label="Resize terminal and documents"
+          tabindex="0"
+        >
+          <span></span>
+        </div>
+        <section id="documentsPanel" class="documents-panel">
+          <div class="section-heading">
+            <div>
+              <h3>Documents</h3>
+              <p>Bash scripting, shell commands, and automation reference</p>
+            </div>
+            <div class="document-actions">
+              <select id="documentSelect" aria-label="Select document"></select>
+              <button id="reloadDocsBtn" class="button secondary">
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div id="documentContent" class="document-content">
+            Select Documents to load the documentation.
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="{{ url_for('static', filename='bash.js') }}"></script>
+  </body>
+</html>

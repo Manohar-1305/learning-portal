@@ -1,0 +1,21 @@
+{% extends "auth_base.html" %} {% block title %}Admin | Learning Labs{% endblock
+%} {% block content %}
+<h1>Admin login</h1>
+<p class="auth-sub">Restricted area.</p>
+
+<form class="auth-form" method="post" action="{{ url_for('admin_login') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}" />
+
+  <div class="field">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" required autofocus />
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required />
+  </div>
+
+  <button class="auth-btn" type="submit">Login</button>
+</form>
+{% endblock %}

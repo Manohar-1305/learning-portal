@@ -1,0 +1,56 @@
+You are on Create Credential, not Create Credential Type.
+1. Close this window.
+2. Go to Automation Execution → Infrastructure → Credential Types.
+3. Click Create credential type (not Create Credential).
+4. Create the custom type there.
+
+Name
+OpenShift API Token
+Input configuration — paste:
+
+fields:
+  - id: openshift_token
+    label: OpenShift API Token
+    type: string
+    secret: true
+    help_text: OpenShift cluster API bearer token
+required:
+  - openshift_token
+
+
+Injector configuration — paste:
+env:
+  OPENSHIFT_TOKEN: "{{ openshift_token }}"
+Click Create credential type.
+
+2. Create credential
+Use this token
+oc login --token=sha256~Omq97W5e8irvnb_WpD73v9OqmzBgRkT4ogKH3zJyByw --server=https://api.sno.manohar.in:6443
+Go to Automation Execution → Infrastructure → Credentials.
+Click Create credential.
+Enter:
+- Name: SNO OpenShift API Token
+- Organization: Your AAP organization
+- Credential Type: OpenShift API Token
+Enter your OpenShift API token in the token field.
+Click Create.
+Open Templates → SOS Report → Edit.
+Under Credentials, add SNO OpenShift API Token.
+
+Save and launch the job.
+
+
+#    - name: Transfer SOS report to bastion
+#     ansible.builtin.copy:
+#        src: "{{ sos_report_dir }}/openshift-sos-report-{{ timestamp }}.tar.gz"
+#        dest: "/tmp/openshift-sos-report-{{ timestamp }}.tar.gz"
+#        mode: "0640"
+#     delegate_to: bastion
+#     register: transfer_result
+
+#    - name: Display SOS report location
+#      ansible.builtin.debug:
+#        msg:
+#          - "SOS report generated successfully."
+#          - "Bastion: 192.168.0.201"
+#          - "Location: /tmp/openshift-sos-report-{{ timestamp }}.tar.gz"

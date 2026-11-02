@@ -1,0 +1,167 @@
+.docs-page {
+  min-height: calc(100vh - 160px);
+}
+
+.docs-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.docs-sidebar,
+.docs-editor {
+  margin-top: 0;
+}
+
+.docs-sidebar .panel-heading {
+  align-items: center;
+}
+
+.docs-sidebar .panel-heading h3 {
+  margin: 0;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.document-list-item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #0d1526;
+  color: var(--text);
+  text-align: left;
+}
+
+.document-list-item:hover {
+  border-color: var(--border);
+  background: #172239;
+}
+
+.document-list-item.selected {
+  border-color: var(--blue-dark);
+  background: #192a48;
+}
+
+.document-list-item strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.document-list-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.editor-fields label {
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.editor-fields input,
+.editor-fields textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  background: #0b1220;
+  color: var(--text);
+}
+
+.editor-fields input {
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.editor-fields textarea {
+  min-height: 420px;
+  padding: 14px;
+  resize: vertical;
+  font:
+    13px/1.65 Consolas,
+    "Courier New",
+    monospace;
+  tab-size: 4;
+}
+
+.editor-fields input:focus,
+.editor-fields textarea:focus {
+  border-color: var(--blue);
+}
+
+.editor-actions {
+  margin-top: 8px;
+}
+
+.message {
+  min-height: 20px;
+  margin-top: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.message.success {
+  color: var(--green);
+}
+
+.message.error {
+  color: var(--red);
+}
+
+.document-preview {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0b1220;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.document-preview h1,
+.document-preview h2,
+.document-preview h3 {
+  color: var(--text);
+}
+
+.document-preview pre {
+  overflow: auto;
+  padding: 14px;
+  border-radius: 8px;
+  background: #050914;
+}
+
+.document-preview code {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.document-preview :not(pre) > code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #1c2940;
+}
+
+@media (max-width: 800px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-editor textarea {
+    min-height: 300px;
+  }
+}

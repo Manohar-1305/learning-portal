@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -16,6 +17,7 @@
           ><strong>Learning Labs &middot; Admin</strong></a
         >
         <div class="nav-actions">
+          <a class="login-btn" href="/">Home</a>
           <a class="login-btn" href="{{ url_for('admin_logout') }}">Logout</a>
         </div>
       </nav>
@@ -99,6 +101,7 @@
               <th>Logins</th>
               <th>Last login</th>
               <th>Joined</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -124,10 +127,26 @@
               <td>{{ u.login_count }}</td>
               <td>{{ u.last_login|ist }}</td>
               <td>{{ u.created_at|ist }}</td>
+              <td>
+                <form
+                  method="post"
+                  action="{{ url_for('admin_delete_user', user_id=u.id) }}"
+                  onsubmit="return confirm('Delete user {{ u.username|e }} and all associated records? This cannot be undone.');"
+                >
+                  <input
+                    type="hidden"
+                    name="_csrf"
+                    value="{{ csrf_token() }}"
+                  />
+                  <button class="mini-btn no" type="submit">
+                    Delete
+                  </button>
+                </form>
+              </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="8" class="empty">No users yet.</td>
+              <td colspan="9" class="empty">No users yet.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -240,3 +259,4 @@
     </main>
   </body>
 </html>
+

@@ -44,3 +44,17 @@ docker build -t learning-labs:1.0 . && docker rm -f learning-labs && docker run 
 docker exec learning-labs pip install simple-websocket
 
 docker exec -it learning-labs python -c "import sqlite3; c=sqlite3.connect('/app/users.db'); print(*c.execute('SELECT id, username, email, created_at FROM users').fetchall(), sep='\n')"
+
+# Check smtp connectivity
+docker exec -i learning-labs python - <<'PY'
+import socket
+
+for port in (587, 465):
+    try:
+        with socket.create_connection(("smtp.gmail.com", port), timeout=10):
+            print(f"Port {port}: CONNECTED")
+    except Exception as e:
+        print(f"Port {port}: FAILED - {e}")
+PY
+
+docker exec learning-labs python -c 'import os; p=os.getenv("MAIL_PASSWORD",""); print("Length:",len(p),"Contains spaces:", " " in p)'

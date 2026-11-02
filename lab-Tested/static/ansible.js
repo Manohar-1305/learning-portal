@@ -1,6 +1,6 @@
 "use strict";
 
-const socket = io();
+const socket = io({ transports: ["polling"] });
 const CURRENT_LAB = "ansible";
 const HOSTS = ["ansible-controller", "ansible-client"];
 

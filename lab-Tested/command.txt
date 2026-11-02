@@ -42,3 +42,5 @@ docker run -d \
 docker build -t learning-labs:1.0 .
 docker rm -f learning-labs
 docker run -d --name learning-labs --network learning-network -p 5000:5000 --env-file .env --env-file files/.env learning-labs:1.0
+
+docker exec learning-labs pip install simple-websocket

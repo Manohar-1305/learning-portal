@@ -1,5 +1,6 @@
 Flask
 Flask-SocketIO
+simple-websocket
 paramiko
 python-dotenv
 qrcode

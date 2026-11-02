@@ -150,7 +150,7 @@ SELECT u.id, u.username, u.email, u.created_at,
   (SELECT lab FROM lab_visits WHERE user_id = u.id ORDER BY at DESC LIMIT 1) AS current_lab,
   (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE user_id = u.id AND status = 'verified') AS paid
 FROM users u
-ORDER BY last_login IS NULL, last_login DESC
+ORDER BY (SELECT MAX(at) FROM logins WHERE user_id = u.id) DESC NULLS LAST
 """
 
 ACTIVITY_SQL = """
@@ -255,3 +255,4 @@ def contribute_submit():
             flash("This reference number was already submitted.", "error")
 
     return redirect(url_for("contribute"))
+

@@ -4,7 +4,7 @@ import os
 import re
 import secrets
 import smtplib
-import psycopg2
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from functools import wraps
@@ -45,16 +45,15 @@ SESSION_JS_VERSION = 1
 def init_user_tables():
     conn = get_db()
     try:
-        cur = conn.cursor()
-        cur.execute(
+        conn.execute(
             """
             CREATE TABLE IF NOT EXISTS email_otps (
-                id BIGSERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL,
                 purpose TEXT NOT NULL,
                 otp_hash TEXT NOT NULL,
                 username TEXT,
-                user_id BIGINT,
+                user_id INTEGER,
                 expires_at TEXT NOT NULL,
                 attempts INTEGER NOT NULL DEFAULT 0,
                 used INTEGER NOT NULL DEFAULT 0,
@@ -63,9 +62,6 @@ def init_user_tables():
             """
         )
         conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
     finally:
         conn.close()
 
@@ -143,24 +139,21 @@ def _issue_otp(email, purpose, username=None, user_id=None):
 
     conn = get_db()
     try:
-        cur = conn.cursor()
-
-        cur.execute(
+        conn.execute(
             """
             UPDATE email_otps
             SET used = 1
-            WHERE email = %s AND purpose = %s AND used = 0
+            WHERE email = ? AND purpose = ? AND used = 0
             """,
             (email, purpose),
         )
 
-        cur.execute(
+        cur = conn.execute(
             """
             INSERT INTO email_otps
             (email, purpose, otp_hash, username, user_id,
              expires_at, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 email,
@@ -173,23 +166,23 @@ def _issue_otp(email, purpose, username=None, user_id=None):
             ),
         )
 
-        otp_id = cur.fetchone()[0]
+        otp_id = cur.lastrowid
         conn.commit()
-
-    except Exception:
-        conn.rollback()
-        raise
-
     finally:
         conn.close()
 
     try:
         _send_otp_email(email, otp, purpose)
     except Exception:
-        db_run(
-            "UPDATE email_otps SET used = 1 WHERE id = ?",
-            (otp_id,),
-        )
+        conn = get_db()
+        try:
+            conn.execute(
+                "UPDATE email_otps SET used = 1 WHERE id = ?",
+                (otp_id,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
         raise
 
     session["otp_id"] = otp_id
@@ -406,7 +399,7 @@ def verify_otp():
                         _now().isoformat(),
                     ),
                 )
-            except psycopg2.IntegrityError:
+            except sqlite3.IntegrityError:
                 flash("Username or email is already registered.", "error")
                 _mark_otp_used(row["id"])
                 _clear_otp_session()

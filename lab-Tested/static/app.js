@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io({ transports: ["polling"] });
 const CURRENT_LAB = window.CURRENT_LAB || "ansible";
 const LAB_HOSTS = window.CURRENT_LAB_HOSTS || {
   ansible: ["ansible-controller", "ansible-client"],

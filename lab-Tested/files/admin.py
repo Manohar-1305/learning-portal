@@ -1,16 +1,20 @@
+
 import os
 import re
 import secrets
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from functools import wraps
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from dotenv import dotenv_values
 from flask import flash, redirect, render_template, request, session, url_for
 
 from files.ansible import app
 from files.auth import _check_csrf, db_run, get_db
+from files.config import execute_script, convert_placeholders
 
 ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 LABS = {"ansible", "jenkins", "bash"}
@@ -38,30 +42,32 @@ def _now():
 def init_tracking():
     conn = get_db()
     try:
-        conn.executescript(
+        execute_script(
+            conn,
             """
             CREATE TABLE IF NOT EXISTS logins (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
                 at TEXT NOT NULL
             );
+
             CREATE TABLE IF NOT EXISTS lab_visits (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
                 lab TEXT NOT NULL,
                 at TEXT NOT NULL
             );
+
             CREATE TABLE IF NOT EXISTS payments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                amount NUMERIC(12, 2) NOT NULL,
                 utr TEXT NOT NULL UNIQUE,
                 status TEXT NOT NULL DEFAULT 'pending',
                 created_at TEXT NOT NULL
             );
             """
         )
-        conn.commit()
     finally:
         conn.close()
 
@@ -140,7 +146,7 @@ USERS_SQL = """
 SELECT u.id, u.username, u.email, u.created_at,
   (SELECT MAX(at) FROM logins WHERE user_id = u.id) AS last_login,
   (SELECT COUNT(*) FROM logins WHERE user_id = u.id) AS login_count,
-  (SELECT GROUP_CONCAT(DISTINCT lab) FROM lab_visits WHERE user_id = u.id) AS labs,
+  (SELECT STRING_AGG(DISTINCT lab, ',') FROM lab_visits WHERE user_id = u.id) AS labs,
   (SELECT lab FROM lab_visits WHERE user_id = u.id ORDER BY at DESC LIMIT 1) AS current_lab,
   (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE user_id = u.id AND status = 'verified') AS paid
 FROM users u
@@ -163,30 +169,45 @@ def admin_dashboard():
     day_ago = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     conn = get_db()
     try:
-        users = conn.execute(USERS_SQL).fetchall()
-        pending = conn.execute(
-            "SELECT p.*, u.username, u.email FROM payments p JOIN users u ON u.id = p.user_id "
-            "WHERE p.status = 'pending' ORDER BY p.created_at DESC"
-        ).fetchall()
-        history = conn.execute(
-            "SELECT p.*, u.username FROM payments p JOIN users u ON u.id = p.user_id "
-            "WHERE p.status != 'pending' ORDER BY p.created_at DESC LIMIT 100"
-        ).fetchall()
-        activity = conn.execute(ACTIVITY_SQL).fetchall()
-        by_lab = conn.execute(
-            "SELECT v.lab AS lab, u.username AS username, COUNT(*) AS visits, MAX(v.at) AS last_at "
-            "FROM lab_visits v JOIN users u ON u.id = v.user_id "
-            "GROUP BY v.lab, u.id ORDER BY v.lab, last_at DESC"
-        ).fetchall()
-        stats = conn.execute(
-            "SELECT (SELECT COUNT(*) FROM users) AS users, "
-            "(SELECT COUNT(DISTINCT user_id) FROM payments WHERE status = 'verified') AS payers, "
-            "(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'verified') AS total, "
-            "(SELECT COUNT(DISTINCT user_id) FROM logins WHERE at >= ?) AS active",
-            (day_ago,),
-        ).fetchone()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(USERS_SQL)
+            users = cur.fetchall()
+
+            cur.execute(
+                "SELECT p.*, u.username, u.email FROM payments p JOIN users u ON u.id = p.user_id "
+                "WHERE p.status = 'pending' ORDER BY p.created_at DESC"
+            )
+            pending = cur.fetchall()
+
+            cur.execute(
+                "SELECT p.*, u.username FROM payments p JOIN users u ON u.id = p.user_id "
+                "WHERE p.status != 'pending' ORDER BY p.created_at DESC LIMIT 100"
+            )
+            history = cur.fetchall()
+
+            cur.execute(ACTIVITY_SQL)
+            activity = cur.fetchall()
+
+            cur.execute(
+                "SELECT v.lab AS lab, u.username AS username, COUNT(*) AS visits, MAX(v.at) AS last_at "
+                "FROM lab_visits v JOIN users u ON u.id = v.user_id "
+                "GROUP BY v.lab, u.id ORDER BY v.lab, last_at DESC"
+            )
+            by_lab = cur.fetchall()
+
+            cur.execute(
+                convert_placeholders(
+                    "SELECT (SELECT COUNT(*) FROM users) AS users, "
+                    "(SELECT COUNT(DISTINCT user_id) FROM payments WHERE status = 'verified') AS payers, "
+                    "(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'verified') AS total, "
+                    "(SELECT COUNT(DISTINCT user_id) FROM logins WHERE at >= ?) AS active"
+                ),
+                (day_ago,),
+            )
+            stats = cur.fetchone()
     finally:
         conn.close()
+
     return render_template(
         "admin.html",
         users=users,
@@ -230,6 +251,7 @@ def contribute_submit():
                 (session["user_id"], float(amount), utr, _now()),
             )
             flash("Thank you! Your payment is submitted and awaiting verification.", "success")
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
             flash("This reference number was already submitted.", "error")
+
     return redirect(url_for("contribute"))

@@ -1,5 +1,7 @@
-{% extends "auth_base.html" %} {% block title %}Login | Learning Labs{% endblock
-%} {% block content %}
+
+{% extends "auth_base.html" %}
+{% block title %}Login | Learning Labs{% endblock %}
+{% block content %}
 <h1>Welcome back</h1>
 <p class="auth-sub">Log in to continue to your learning labs.</p>
 
@@ -9,26 +11,16 @@
 
   <div class="field">
     <label for="identifier">Username or email</label>
-    <input
-      id="identifier"
-      name="identifier"
-      type="text"
-      autocomplete="username"
-      value="{{ request.form.get('identifier', '') }}"
-      required
-      autofocus
-    />
+    <input id="identifier" name="identifier" type="text"
+           autocomplete="username"
+           value="{{ request.form.get('identifier', '') }}"
+           required autofocus />
   </div>
 
   <div class="field">
     <label for="password">Password</label>
-    <input
-      id="password"
-      name="password"
-      type="password"
-      autocomplete="current-password"
-      required
-    />
+    <input id="password" name="password" type="password"
+           autocomplete="current-password" required />
   </div>
 
   <div class="auth-row">

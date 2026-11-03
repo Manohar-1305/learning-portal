@@ -58,3 +58,6 @@ for port in (587, 465):
 PY
 
 docker exec learning-labs python -c 'import os; p=os.getenv("MAIL_PASSWORD",""); print("Length:",len(p),"Contains spaces:", " " in p)'
+
+docker exec -it postgres psql -U learning_user -d learning_labs
+SELECT * FROM lab_recommendations ORDER BY created_at DESC;

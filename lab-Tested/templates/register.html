@@ -1,31 +1,155 @@
 
 {% extends "auth_base.html" %}
-{% block title %}Register | Learning Labs{% endblock %}
-{% block content %}
-<h1>Create your account</h1>
-<p class="auth-sub">Sign up to start practicing in your own labs.</p>
 
-<form class="auth-form" method="post" action="{{ url_for('register') }}">
-  <input type="hidden" name="_csrf" value="{{ csrf_token() }}" />
+{% block title %}Create Account | Learning Labs{% endblock %}
 
-  <div class="field">
-    <label for="username">Username (3-30 characters)</label>
-    <input id="username" name="username" type="text"
-           autocomplete="username" minlength="3" maxlength="30"
-           value="{{ request.form.get('username', '') }}" required autofocus />
-  </div>
+{% block left_panel %}
 
-  <div class="field">
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email"
-           autocomplete="email" value="{{ request.form.get('email', '') }}"
-           required />
-  </div>
+<section class="visual-panel welcome-panel">
 
-  <button class="auth-btn" type="submit">Send verification code</button>
-</form>
+    <div class="visual-top">
+        <a href="{{ url_for('login') }}" class="visual-brand">
+            LEARNING LABS
+        </a>
+        <span class="status-label">
+            <span class="status-dot"></span>
+            YOUR JOURNEY STARTS HERE
+        </span>
+    </div>
 
-<p class="auth-switch">
-  Already have an account? <a href="{{ url_for('login') }}">Login</a>
-</p>
+    <div class="welcome-content">
+
+        <div class="welcome-symbol">
+            <span>LL</span>
+        </div>
+
+        <span class="eyebrow-light">WELCOME TO LEARNING LABS</span>
+
+        <h1>Every expert was<br>once a beginner.</h1>
+
+        <p class="welcome-description">
+            Don't just read about technology. Get your hands dirty,
+            experiment with real tools, solve problems and build
+            the confidence to take on real-world challenges.
+        </p>
+
+        <div class="welcome-divider"></div>
+
+        <div class="motivation-list">
+
+            <div class="motivation-item">
+                <span class="motivation-number">01</span>
+                <div>
+                    <h3>Learn at your own pace</h3>
+                    <p>Practice whenever you are ready.</p>
+                </div>
+            </div>
+
+            <div class="motivation-item">
+                <span class="motivation-number">02</span>
+                <div>
+                    <h3>Experiment without limits</h3>
+                    <p>Build, break and understand technology.</p>
+                </div>
+            </div>
+
+            <div class="motivation-item">
+                <span class="motivation-number">03</span>
+                <div>
+                    <h3>Turn knowledge into skills</h3>
+                    <p>Get practical experience that moves you forward.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="visual-footer">
+        <span>Learn</span>
+        <span>Practice</span>
+        <span>Improve</span>
+        <span>Repeat</span>
+    </div>
+
+</section>
+
+{% endblock %}
+
+
+{% block right_panel %}
+
+<section class="auth-panel form-panel register-panel">
+
+    <div class="form-content">
+
+        <a href="{{ url_for('login') }}" class="brand">
+            <span class="brand-icon">LL</span>
+            <span>Learning Labs</span>
+        </a>
+
+        <div class="form-heading">
+            <span class="eyebrow">CREATE YOUR ACCOUNT</span>
+            <h1>Start your journey</h1>
+            <p>Create an account to access your personal learning labs.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form class="auth-form" method="post" action="{{ url_for('register') }}">
+
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+            <div class="field">
+                <label for="username">Username</label>
+                <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autocomplete="username"
+                    minlength="3"
+                    maxlength="30"
+                    value="{{ request.form.get('username', '') }}"
+                    placeholder="Choose a username"
+                    required
+                    autofocus>
+                <small>Use 3–30 characters.</small>
+            </div>
+
+            <div class="field">
+                <label for="email">Email address</label>
+                <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    value="{{ request.form.get('email', '') }}"
+                    placeholder="Enter your email address"
+                    required>
+            </div>
+
+            <button class="auth-btn" type="submit">
+                Send verification code
+                <span>→</span>
+            </button>
+
+        </form>
+
+        <div class="auth-switch">
+            Already have an account?
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+
+        <div class="form-footer">
+            © 2026 Learning Labs. All rights reserved.
+        </div>
+
+    </div>
+
+</section>
+
 {% endblock %}

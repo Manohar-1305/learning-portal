@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -12,13 +13,14 @@
   <body>
     <main class="labs-page">
       <nav class="home-nav">
-        <a href="/" aria-label="Learning Labs home"
-          ><strong>Learning Labs</strong></a
-        >
+        <a href="/" aria-label="Learning Labs home">
+          <strong>Learning Labs</strong>
+        </a>
         <div class="nav-actions">
           <a class="nav-link active" href="/contribute">Contribute</a>
-          {% if session.get('user') %}
-          <a class="login-btn" href="/logout">Logout ({{ session['user'] }})</a>
+          {% if session.get('username') %}
+          <span class="nav-link">Welcome, {{ session['username'] }}</span>
+          <a class="logout-btn" href="/logout">Logout</a>
           {% else %}
           <a class="login-btn" href="/login">Login</a>
           {% endif %}
@@ -140,6 +142,7 @@
           encodeURIComponent(PAYEE) +
           "&cu=INR&tn=" +
           encodeURIComponent("Learning Labs contribution");
+
         if (valid) link += "&am=" + value.toFixed(2);
         upiOpen.href = link;
 
@@ -149,11 +152,13 @@
       document
         .getElementById("qr-close")
         .addEventListener("click", () => dialog.close());
+
       dialog.addEventListener("click", (event) => {
         if (event.target === dialog) dialog.close();
       });
 
       const copyBtn = document.getElementById("copy-btn");
+
       copyBtn.addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText(UPI_ID);
@@ -161,6 +166,7 @@
         } catch (err) {
           copyBtn.textContent = "Copy failed";
         }
+
         setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
       });
     </script>

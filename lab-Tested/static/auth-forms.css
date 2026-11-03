@@ -85,7 +85,9 @@
     font-size: 11px;
 }
 
-.auth-btn {
+/* Authentication buttons */
+.auth-form button.auth-btn,
+button.auth-btn {
     width: 100%;
     min-height: 47px;
     margin-top: 5px;
@@ -103,14 +105,27 @@
     font-weight: 650;
     cursor: pointer;
     transition: background .2s, transform .2s;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
-.auth-btn:hover {
+.auth-form button.auth-btn:hover,
+button.auth-btn:hover {
     background: #1e52aa;
 }
 
-.auth-btn:active {
+.auth-form button.auth-btn:active,
+button.auth-btn:active {
     transform: translateY(1px);
+}
+
+.auth-form button.auth-btn:disabled,
+button.auth-btn:disabled {
+    background: #8ba9d8;
+    color: #ffffff;
+    cursor: not-allowed;
+    opacity: 1;
+    transform: none;
 }
 
 .auth-switch {

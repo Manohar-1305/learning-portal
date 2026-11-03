@@ -36,4 +36,40 @@
     {% else %}Verify and update password{% endif %}
   </button>
 </form>
+
+<form class="auth-form" method="post" action="{{ url_for('resend_otp') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}" />
+  <button class="auth-btn" id="resendOtpButton" type="submit"
+          {% if resend_wait|default(0)|int > 0 %}disabled{% endif %}>
+    {% if resend_wait|default(0)|int > 0 %}
+      Resend code in <span id="resendCountdown">{{ resend_wait }}</span>s
+    {% else %}
+      Resend verification code
+    {% endif %}
+  </button>
+</form>
+
+<script>
+(function () {
+  const button = document.getElementById("resendOtpButton");
+  const countdown = document.getElementById("resendCountdown");
+
+  if (!button || !countdown) return;
+
+  let remaining = parseInt(countdown.textContent, 10) || 0;
+
+  const timer = setInterval(function () {
+    remaining--;
+
+    if (remaining <= 0) {
+      clearInterval(timer);
+      button.disabled = false;
+      button.textContent = "Resend verification code";
+      return;
+    }
+
+    countdown.textContent = remaining;
+  }, 1000);
+})();
+</script>
 {% endblock %}
